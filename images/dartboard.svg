@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<svg xmlns="http://www.w3.org/2000/svg" id="dart-board" viewBox="0 0 200 200" style="border-radius: 50%; border: 0px solid #782a2a; background: silver">
+<g class="pie20">
+<path id="border20" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20">20</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie1" transform="rotate(18 100 100)">
+<path id="border1" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="96.62156946997524" y="10" width="20" height="20">1</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie18" transform="rotate(36 100 100)">
+<path id="border18" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20">18</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie4" transform="rotate(54 100 100)">
+<path id="border4" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="96.62156946997524" y="10" width="20" height="20">4</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie13" transform="rotate(72 100 100)">
+<path id="border13" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20">13</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie6" transform="rotate(90 100 100)">
+<path id="border6" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="96.62156946997524" y="10" width="20" height="20">6</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie10" transform="rotate(108 100 100)">
+<path id="border10" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20" transform="translate(-10,-25) rotate(180, 104.62156946997524, 20)">10</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie15" transform="rotate(126 100 100)">
+<path id="border15" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20" transform="translate(-10,-25) rotate(180, 104.62156946997524, 20)">15</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie2" transform="rotate(144 100 100)">
+<path id="border2" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="96.62156946997524" y="10" width="20" height="20" transform="translate(-10,-25) rotate(180, 104.62156946997524, 20)">2</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie17" transform="rotate(162 100 100)">
+<path id="border17" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20" transform="translate(-10,-25) rotate(180, 104.62156946997524, 20)">17</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie3" transform="rotate(180 100 100)">
+<path id="border3" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="96.62156946997524" y="10" width="20" height="20" transform="translate(-10,-25) rotate(180, 104.62156946997524, 20)">3</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie19" transform="rotate(-162 100 100)">
+<path id="border19" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20" transform="translate(-10,-25) rotate(180, 104.62156946997524, 20)">19</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie7" transform="rotate(-144 100 100)">
+<path id="border7" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="96.62156946997524" y="10" width="20" height="20" transform="translate(-10,-25) rotate(180, 104.62156946997524, 20)">7</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie16" transform="rotate(-126 100 100)">
+<path id="border16" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20" transform="translate(-10,-25) rotate(180, 104.62156946997524, 20)">16</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie8" transform="rotate(-108 100 100)">
+<path id="border8" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="96.62156946997524" y="10" width="20" height="20" transform="translate(-10,-25) rotate(180, 104.62156946997524, 20)">8</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie11" transform="rotate(-90 100 100)">
+<path id="border11" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20">11</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie14" transform="rotate(-72 100 100)">
+<path id="border14" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20">14</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie9" transform="rotate(-54 100 100)">
+<path id="border9" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="96.62156946997524" y="10" width="20" height="20">9</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie12" transform="rotate(-36 100 100)">
+<path id="border12" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="94.62156946997524" y="10" width="20" height="20">12</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="red" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="black" stroke-width="0.5" stroke="silver" />
+</g>
+<g class="pie5" transform="rotate(-18 100 100)">
+<path id="border5" d="M100 100 L115.62156946997524 2 A100 100 1 0,0 84.37843053002476,2 L100 100Z" fill="black" stroke-width="0.5" />
+<text fill="white" font-size="10px" x="96.62156946997524" y="10" width="20" height="20">5</text>
+<path class="D" d="M100 100 L113.07789494163579 17 A100 100 1 0,0 86.9097834459255,17 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L112.037300816406 23.5 A100 100 1 0,0 88.00670304281583,23.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+<path class="T" d="M100 100 L107.52805960707697 52 A80 80 1 0,0 92.39438143037711,52 L100 100Z" fill="green" stroke-width="0.5" stroke="silver" />
+<path class="S" d="M100 100 L106.4874654818472 58.5 A80 80 1 0,0 93.49130102726744,58.5 L100 100Z" fill="tan" stroke-width="0.5" stroke="silver" />
+</g><circle id="S-BULL" cx="100" cy="100" r="8.8" stroke-width="0.5" stroke="silver" fill="green"></circle><circle id="D-BULL" cx="100" cy="100" r="3.8" stroke-width="0.5" stroke="silver" fill="red"></circle></svg>
