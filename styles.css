@@ -923,6 +923,15 @@ main {
   color: #e3e8ef;
 }
 
+:root[data-theme='midnight-neon'] .history-detail-card,
+:root[data-theme='midnight-neon'] .history-detail-card .table,
+:root[data-theme='midnight-neon'] .history-detail-card .table th,
+:root[data-theme='midnight-neon'] .history-detail-card .table td,
+:root[data-theme='midnight-neon'] .history-detail-card .h6,
+:root[data-theme='midnight-neon'] .history-detail-card h3.h6 {
+  color: #e3e8ef;
+}
+
 :root[data-theme='midnight-neon'] .setup-options,
 :root[data-theme='midnight-neon'] .existing-users-list,
 :root[data-theme='midnight-neon'] .history-controls,

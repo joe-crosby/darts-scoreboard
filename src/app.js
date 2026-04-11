@@ -412,15 +412,43 @@ async function deleteExistingUser(userName){
     return;
   }
 
-  const confirmed = await showConfirm(`Delete user "${normalizedName}" from existing users?`, 'Delete User');
+  const confirmed = await showConfirm(
+    `Delete user "${normalizedName}" from existing users?\n\nThis will also permanently delete all of their stats from game history. Game records will remain if other players participated. This cannot be undone.`,
+    'Delete User'
+  );
   if(!confirmed){
     return;
   }
 
+  // Remove user from known users
   knownUsers = knownUsers.filter((name) => playerNameKey(name) !== playerNameKey(normalizedName));
   selectedExistingUsers = selectedExistingUsers.filter((name) => playerNameKey(name) !== playerNameKey(normalizedName));
   await saveKnownUsers(knownUsers);
   renderKnownUsers(selectedExistingUsers);
+
+
+  // Remove user from all history records' players arrays
+  const allHistory = await storage.listHistory();
+  for(const record of allHistory) {
+    if(Array.isArray(record.players)) {
+      const newPlayers = record.players.filter(player => playerNameKey(player.name) !== playerNameKey(normalizedName));
+      if(newPlayers.length !== record.players.length) {
+        if(newPlayers.length === 0) {
+          // If no players left, delete the record
+          await storage.deleteHistory(record.id);
+        } else {
+          record.players = newPlayers;
+          await storage.saveHistory(record);
+        }
+      }
+    }
+  }
+
+  // Optionally, refresh the history list if visible
+  if(typeof renderHistoryList === 'function'){
+    historyCache = await storage.listHistory();
+    renderHistoryList();
+  }
 }
 
 async function renameExistingUser(userName){
@@ -1287,27 +1315,46 @@ function renderHistoryList(){
       <div class="text-muted small">${escapeHtml(winnerLabel)}${winnerFlair} • Players: ${escapeHtml(players)}</div>
     `;
 
-    const button = document.createElement('button');
-    button.className = 'btn btn-outline-secondary btn-sm flex-shrink-0';
-    button.textContent = 'View';
-    button.setAttribute('aria-expanded', 'false');
+    // View button
+    const viewBtn = document.createElement('button');
+    viewBtn.className = 'btn btn-outline-secondary btn-sm flex-shrink-0';
+    viewBtn.textContent = 'View';
+    viewBtn.setAttribute('aria-expanded', 'false');
+
+    // Delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn btn-outline-danger btn-sm flex-shrink-0 ms-2';
+    deleteBtn.textContent = 'Delete';
 
     const inlineDetail = document.createElement('div');
     inlineDetail.className = 'history-inline-detail';
     inlineDetail.hidden = true;
 
-    button.addEventListener('click', () => {
+    viewBtn.addEventListener('click', () => {
       const isOpen = !inlineDetail.hidden;
       inlineDetail.hidden = isOpen;
-      button.textContent = isOpen ? 'View' : 'Hide';
-      button.setAttribute('aria-expanded', String(!isOpen));
+      viewBtn.textContent = isOpen ? 'View' : 'Hide';
+      viewBtn.setAttribute('aria-expanded', String(!isOpen));
       if(!isOpen && !inlineDetail.dataset.rendered){
         inlineDetail.innerHTML = renderHistoryDetailHtml(record);
         inlineDetail.dataset.rendered = '1';
       }
     });
 
-    row.append(label, button);
+    deleteBtn.addEventListener('click', async () => {
+      const confirmed = await showConfirm('Delete this history item? This cannot be undone.', 'Delete History');
+      if (!confirmed) return;
+      await storage.deleteHistory(record.id);
+      // Remove from cache and re-render
+      historyCache = historyCache.filter(r => r.id !== record.id);
+      renderHistoryList();
+    });
+
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'd-flex gap-2';
+    btnGroup.append(viewBtn, deleteBtn);
+
+    row.append(label, btnGroup);
     item.append(row, inlineDetail);
     historyList.appendChild(item);
   }

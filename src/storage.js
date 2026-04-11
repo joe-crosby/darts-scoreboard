@@ -1,3 +1,13 @@
+export async function deleteHistory(id){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('history', 'readwrite');
+    const store = tx.objectStore('history');
+    const request = store.delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
 // Minimal IndexedDB wrapper for storing games & history
 const DB_NAME = 'darts-db';
 const DB_VERSION = 3;

@@ -1,4 +1,4 @@
-const CACHE = 'darts-cache-v7';
+const CACHE = 'darts-cache-v8';
 const ASSETS = [
   './index.html',
   './styles.css',
