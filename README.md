@@ -35,10 +35,15 @@ Then open `http://localhost:8000`.
 ## Project structure
 
 - `index.html`: app shell and panels.
-- `src/app.js`: runtime state, SVG click handling, session/history rendering.
+- `src/app.js`: application orchestration, event binding, and session management.
 - `src/gameRegistry.js`: modular game definitions.
-- `src/games/`: rules engines.
+- `src/games/`: rules engines (Cricket, Shanghai, 501/301, etc.).
 - `src/storage.js`: IndexedDB persistence.
 - `src/stats.js`: aggregate history statistics.
+- `src/utils.js`: shared utility functions.
+- `src/ui/`: UI module layer for rendering and state transformation.
+  - `scoreboardView.js`: converts game state to scoreboard HTML.
+  - `historyView.js`: processes history records into detail tables and performance metrics.
+  - `messageModalView.js`: modal dialog controller and helper functions.
 - `sw.js`: service worker cache for offline capability.
 - `tests/games.test.js`: game rules verification.

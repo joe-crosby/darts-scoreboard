@@ -48,6 +48,25 @@ export class Shanghai extends BaseGame{
     };
   }
 
+  getThrowRecordMeta(){
+    return {
+      round: this.getRoundForRecord(),
+      shanghaiTarget: this.getCurrentTarget(),
+      ...(this.getTieBreakerThrowMeta() || {})
+    };
+  }
+
+  getAwardedScoreForThrow({ hit }){
+    const target = this.getCurrentTarget();
+    return getShanghaiAwardedScore(
+      target,
+      hit?.target,
+      hit?.multiplier,
+      hit?.score,
+      this.scoringMode
+    );
+  }
+
   startTieBreaker(players, reason){
     this.finished = false;
     this.winners = [];
@@ -206,7 +225,13 @@ export class Shanghai extends BaseGame{
         this.finished = true;
         this.winners = [p];
         this.log.push({type:'finish',player:p.name,mode:'shanghai'});
-        return {player:p,finished:true,winner:p,message:`${p.name} wins with a Shanghai on ${activeTarget}`};
+        return {
+          player:p,
+          finished:true,
+          winner:p,
+          message:`${p.name} wins with a Shanghai on ${activeTarget}`,
+          shanghaiFinishRound: activeTarget
+        };
       }
     } else {
       this.log.push({type:'miss',player:p.name,target});

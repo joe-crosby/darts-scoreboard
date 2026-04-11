@@ -1,5 +1,8 @@
 import { GAME_REGISTRY } from './gameRegistry.js';
-import { getShanghaiAwardedScore, getShanghaiRoundTotal } from './games/shanghaiScoring.js';
+import { renderScoreboardHtml } from './ui/scoreboardView.js';
+import { getShanghaiFinishRound, renderHistoryDetailHtml } from './ui/historyView.js';
+import { MessageModalController, initializeMessageModal, showMessage, showConfirm, showPrompt, closeMessage } from './ui/messageModalView.js';
+import { escapeHtml } from './utils.js';
 import * as storage from './storage.js';
 import { formatSummaryHtml, summarizeHistory } from './stats.js';
 
@@ -68,108 +71,6 @@ const messageOkBtn = document.getElementById('message-ok');
 const messageYesBtn = document.getElementById('message-yes');
 const messageNoBtn = document.getElementById('message-no');
 
-class MessageModalController {
-  constructor({ modalEl, panelEl, badgeEl, titleEl, bodyEl, okBtn, yesBtn, noBtn }) {
-    this.modalEl = modalEl;
-    this.panelEl = panelEl;
-    this.badgeEl = badgeEl;
-    this.titleEl = titleEl;
-    this.bodyEl = bodyEl;
-    this.okBtn = okBtn;
-    this.yesBtn = yesBtn;
-    this.noBtn = noBtn;
-    this.pendingResolve = null;
-    this.mode = 'message';
-    this.promptInput = document.createElement('input');
-    this.promptInput.type = 'text';
-    this.promptInput.className = 'form-control mt-2';
-    this.promptInput.autocomplete = 'off';
-    this.promptInput.setAttribute('aria-label', 'Input value');
-  }
-
-  removePromptInput() {
-    if(this.promptInput.parentElement === this.bodyEl){
-      this.bodyEl.removeChild(this.promptInput);
-    }
-  }
-
-  showMessage(text, title = 'Notice', type = 'info') {
-    this.mode = 'message';
-    this.removePromptInput();
-    this.titleEl.textContent = title;
-    this.bodyEl.textContent = text;
-    this.panelEl.classList.remove('info', 'warning', 'error');
-    this.panelEl.classList.add(type);
-    this.badgeEl.innerHTML = getBadgeIconSvg(type);
-    this.okBtn.hidden = false;
-    this.yesBtn.hidden = true;
-    this.noBtn.hidden = true;
-    this.modalEl.hidden = false;
-    this.okBtn.focus();
-    return new Promise((resolve) => {
-      this.pendingResolve = resolve;
-    });
-  }
-
-  showConfirm(text, title = 'Confirm') {
-    this.mode = 'confirm';
-    this.removePromptInput();
-    this.titleEl.textContent = title;
-    this.bodyEl.textContent = text;
-    this.panelEl.classList.remove('info', 'warning', 'error');
-    this.panelEl.classList.add('info');
-    this.badgeEl.innerHTML = getBadgeIconSvg('confirm');
-    this.okBtn.hidden = true;
-    this.yesBtn.hidden = false;
-    this.noBtn.hidden = false;
-    this.modalEl.hidden = false;
-    this.yesBtn.focus();
-    return new Promise((resolve) => {
-      this.pendingResolve = resolve;
-    });
-  }
-
-  showPrompt(text, title = 'Prompt', initialValue = '') {
-    this.mode = 'prompt';
-    this.titleEl.textContent = title;
-    this.bodyEl.textContent = text;
-    if(this.promptInput.parentElement !== this.bodyEl){
-      this.bodyEl.appendChild(this.promptInput);
-    }
-    this.promptInput.value = initialValue;
-    this.panelEl.classList.remove('info', 'warning', 'error');
-    this.panelEl.classList.add('info');
-    this.badgeEl.innerHTML = getBadgeIconSvg('confirm');
-    this.okBtn.hidden = true;
-    this.yesBtn.hidden = false;
-    this.noBtn.hidden = false;
-    this.modalEl.hidden = false;
-    this.promptInput.focus();
-    this.promptInput.select();
-    return new Promise((resolve) => {
-      this.pendingResolve = resolve;
-    });
-  }
-
-  close(result) {
-    if(this.modalEl.hidden){
-      return;
-    }
-    this.modalEl.hidden = true;
-    if(this.pendingResolve){
-      const resolve = this.pendingResolve;
-      this.pendingResolve = null;
-      if(this.mode === 'prompt'){
-        resolve(result === true ? this.promptInput.value : null);
-      } else {
-        resolve(result);
-      }
-    }
-    this.mode = 'message';
-    this.removePromptInput();
-  }
-}
-
 const messageModalController = new MessageModalController({
   modalEl: messageModal,
   panelEl: messagePanel,
@@ -180,6 +81,8 @@ const messageModalController = new MessageModalController({
   yesBtn: messageYesBtn,
   noBtn: messageNoBtn
 });
+
+initializeMessageModal(messageModalController);
 
 let game = null;
 let session = null;
@@ -707,42 +610,6 @@ function syncScoreboardState(){
   }
 }
 
-function getBadgeForType(type){
-  if(type === 'error') return 'error';
-  if(type === 'warning') return 'warning';
-  return 'info';
-}
-
-function getBadgeIconSvg(type){
-  const iconType = getBadgeForType(type);
-  if(iconType === 'warning'){
-    return '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.71c.889 0 1.438-.99.98-1.767z"/><path fill="currentColor" d="M8 5c.535 0 .954.462.9.995l-.35 3.507a.55.55 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2"/></svg>';
-  }
-  if(iconType === 'error'){
-    return '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M11.46.146a.5.5 0 0 1 .353.146l4.894 4.894a.5.5 0 0 1 .146.353v4.922a.5.5 0 0 1-.146.353l-4.894 4.894a.5.5 0 0 1-.353.146H5.538a.5.5 0 0 1-.353-.146L.292 10.814a.5.5 0 0 1-.146-.353V5.54a.5.5 0 0 1 .146-.353L5.185.292a.5.5 0 0 1 .353-.146z"/><path fill="#fff" d="M4.646 4.646a.5.5 0 0 0 0 .708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646a.5.5 0 0 0-.708 0"/></svg>';
-  }
-  if(type === 'confirm'){
-    return '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0"/><path fill="#fff" d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286z"/><path fill="#fff" d="M7.991 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/></svg>';
-  }
-  return '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0"/><path fill="#fff" d="m8.93 6.588-2.29.287-.082.38.451.082c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533z"/><circle cx="8" cy="4.5" r="1" fill="#fff"/></svg>';
-}
-
-function showMessage(text, title = 'Notice', type = 'info'){
-  return messageModalController.showMessage(text, title, type);
-}
-
-function showConfirm(text, title = 'Confirm'){
-  return messageModalController.showConfirm(text, title);
-}
-
-function showPrompt(text, title = 'Prompt', initialValue = ''){
-  return messageModalController.showPrompt(text, title, initialValue);
-}
-
-function closeMessage(){
-  messageModalController.close();
-}
-
 function getToastEl(){
   let toastEl = document.getElementById('app-toast');
   if(toastEl){
@@ -988,351 +855,9 @@ function appendLog(message){
   // Log functionality removed from game screen
 }
 
-function buildSessionStats(){
-  if(!session){
-    return '<div class="text-muted">No active session.</div>';
-  }
-
-  const throwCount = session.throws.length;
-  const rounds = game?.round ? `Round ${game.round}` : 'No round state';
-  return `
-    <div><strong>Total throws:</strong> ${throwCount}</div>
-    <div><strong>Game:</strong> ${session.gameLabel}</div>
-    <div><strong>State:</strong> ${rounds}</div>
-  `;
-}
-
 function renderScoreboard(){
   const displayedState = getDisplayedGameState();
-  if(!displayedState){
-    scoreboardEl.innerHTML = '<div class="text-muted p-2">Start a game to see scores.</div>';
-    syncScoreboardState();
-    return;
-  }
-
-  const { game: activeBoardGame, session: activeBoardSession, isCompleted } = displayedState;
-  const descriptor = GAME_REGISTRY[activeBoardSession.gameKey];
-
-  const splitPlayers = () => {
-    const splitIndex = Math.ceil(activeBoardGame.players.length / 2);
-    const leftPlayers = activeBoardGame.players.slice(0, splitIndex);
-    const rightPlayers = activeBoardGame.players.slice(splitIndex);
-    const pad = (players, size) => {
-      const padded = [...players];
-      while(padded.length < size){
-        padded.push(null);
-      }
-      return padded;
-    };
-    const columnSize = Math.max(leftPlayers.length, rightPlayers.length);
-    return {
-      left: pad(leftPlayers, columnSize),
-      right: pad(rightPlayers, columnSize)
-    };
-  };
-
-  const renderBoard = ({centerHeader, rowLabels, cellFor, footerLabel, footerFor, hideRowLabels = false, noFooter = false, compactRows = false}) => {
-    const { left, right } = splitPlayers();
-    const tableClass = compactRows ? 'dart-board-table compact-rows' : 'dart-board-table';
-    let html = `<div class="dart-board"><table class="${tableClass}">`;
-
-    html += '<thead><tr>';
-    left.forEach((player) => {
-      if(player){
-        const activeClass = !isCompleted && player.id === activeBoardGame.currentPlayerIndex ? ' active-player-header' : '';
-        html += `<th class="board-player-col${activeClass}">${player.name}</th>`;
-      } else {
-        html += '<th class="board-player-col board-spacer-col"></th>';
-      }
-    });
-    html += `<th class="board-center-col">${centerHeader}</th>`;
-    right.forEach((player) => {
-      if(player){
-        const activeClass = !isCompleted && player.id === activeBoardGame.currentPlayerIndex ? ' active-player-header' : '';
-        html += `<th class="board-player-col${activeClass}">${player.name}</th>`;
-      } else {
-        html += '<th class="board-player-col board-spacer-col"></th>';
-      }
-    });
-    html += '</tr></thead><tbody>';
-
-    rowLabels.forEach((label, rowIndex) => {
-      html += '<tr>';
-      left.forEach((player) => {
-        if(!player){
-          html += '<td class="board-player-cell board-spacer-col"></td>';
-          return;
-        }
-        const activeClass = !isCompleted && player.id === activeBoardGame.currentPlayerIndex ? ' active-player-cell' : '';
-        html += `<td class="board-player-cell${activeClass}">${cellFor(player, rowIndex, label)}</td>`;
-      });
-      const rowLabel = hideRowLabels ? '&nbsp;' : label;
-      html += `<td class="board-center-col board-row-label">${rowLabel}</td>`;
-      right.forEach((player) => {
-        if(!player){
-          html += '<td class="board-player-cell board-spacer-col"></td>';
-          return;
-        }
-        const activeClass = !isCompleted && player.id === activeBoardGame.currentPlayerIndex ? ' active-player-cell' : '';
-        html += `<td class="board-player-cell${activeClass}">${cellFor(player, rowIndex, label)}</td>`;
-      });
-      html += '</tr>';
-    });
-
-    html += '</tbody>';
-    if(!noFooter){
-      html += '<tfoot><tr>';
-      left.forEach((player) => {
-        html += player
-          ? `<td class="board-footer-cell">${footerFor(player)}</td>`
-          : '<td class="board-footer-cell board-spacer-col"></td>';
-      });
-      html += `<td class="board-center-col board-footer-label">${footerLabel}</td>`;
-      right.forEach((player) => {
-        html += player
-          ? `<td class="board-footer-cell">${footerFor(player)}</td>`
-          : '<td class="board-footer-cell board-spacer-col"></td>';
-      });
-      html += '</tr></tfoot>';
-    }
-    html += '</table></div>';
-    return html;
-  };
-
-  const markForState = (state, hits) => {
-    if(state === 'closed-circle'){
-      return `
-        <svg class="cricket-icon cricket-icon-closed" viewBox="0 0 24 24" aria-label="closed with circle" role="img">
-          <circle cx="12" cy="12" r="9" />
-        </svg>
-      `;
-    }
-    if(state === 'closed-x'){
-      return `
-        <svg class="cricket-icon cricket-icon-closed" viewBox="0 0 24 24" aria-label="closed with x" role="img">
-          <circle cx="12" cy="12" r="9" />
-          <line x1="7" y1="7" x2="17" y2="17" />
-          <line x1="17" y1="7" x2="7" y2="17" />
-        </svg>
-      `;
-    }
-    if(state === 'closed-slash'){
-      return `
-        <svg class="cricket-icon cricket-icon-closed" viewBox="0 0 24 24" aria-label="closed with slash" role="img">
-          <circle cx="12" cy="12" r="9" />
-          <line x1="7" y1="17" x2="17" y2="7" />
-        </svg>
-      `;
-    }
-    if(hits >= 3){
-      return `
-        <svg class="cricket-icon cricket-icon-closed" viewBox="0 0 24 24" aria-label="closed" role="img">
-          <circle cx="12" cy="12" r="9" />
-        </svg>
-      `;
-    }
-    if(state === 'double' || hits === 2){
-      return `
-        <svg class="cricket-icon cricket-icon-double" viewBox="0 0 24 24" aria-label="double" role="img">
-          <line x1="7" y1="7" x2="17" y2="17" />
-          <line x1="17" y1="7" x2="7" y2="17" />
-        </svg>
-      `;
-    }
-    if(state === 'single' || hits === 1){
-      return `
-        <svg class="cricket-icon cricket-icon-single" viewBox="0 0 24 24" aria-label="single" role="img">
-          <line x1="7" y1="17" x2="17" y2="7" />
-        </svg>
-      `;
-    }
-    return '<span class="cricket-mark mark-empty"></span>';
-  };
-
-  const renderCricketCell = (player, target) => {
-    const hits = Math.min(3, player.meta.hits?.[target] || 0);
-    const state = player.meta.markState?.[target] || 'empty';
-    return `<div class="board-cell-inner cricket-cell-inner">${markForState(state, hits)}</div>`;
-  };
-
-  const buildCountDownTurns = () => {
-    const startScore = activeBoardGame.startScore || Number.parseInt(activeBoardSession.gameKey, 10) || 0;
-    const turnsByPlayer = new Map(activeBoardGame.players.map((player) => [player.id, []]));
-    const remainingByPlayer = new Map(activeBoardGame.players.map((player) => [player.id, startScore]));
-    let currentTurn = null;
-
-    const pushTurn = () => {
-      if(!currentTurn){
-        return;
-      }
-      turnsByPlayer.get(currentTurn.playerId).push(currentTurn);
-      currentTurn = null;
-    };
-
-    for(const throwRecord of activeBoardSession.throws){
-      if(currentTurn && currentTurn.playerId !== throwRecord.playerId){
-        pushTurn();
-      }
-
-      if(!currentTurn){
-        const start = remainingByPlayer.get(throwRecord.playerId) ?? startScore;
-        currentTurn = {
-          playerId: throwRecord.playerId,
-          start,
-          end: start,
-          bust: false
-        };
-      }
-
-      const currentScore = remainingByPlayer.get(throwRecord.playerId) ?? startScore;
-      const scored = Number(throwRecord.awardedScore ?? throwRecord.score ?? 0);
-      const nextScore = currentScore - scored;
-      const bust = String(throwRecord.message || '').toLowerCase().includes('bust');
-      const turnReset = Boolean(throwRecord.turnReset);
-
-      if(bust){
-        currentTurn.bust = true;
-        currentTurn.end = currentTurn.start;
-        remainingByPlayer.set(throwRecord.playerId, currentTurn.start);
-        pushTurn();
-        continue;
-      }
-
-      if(turnReset){
-        currentTurn.end = currentTurn.start;
-        remainingByPlayer.set(throwRecord.playerId, currentTurn.start);
-        pushTurn();
-        continue;
-      }
-
-      remainingByPlayer.set(throwRecord.playerId, nextScore);
-      currentTurn.end = nextScore;
-
-      if(nextScore === 0 || throwRecord.throwNumber === 3){
-        pushTurn();
-      }
-    }
-
-    pushTurn();
-    return turnsByPlayer;
-  };
-
-  const renderCountDownCell = (turn) => {
-    if(!turn){
-      return '<div class="board-cell-inner"></div>';
-    }
-    if(turn.initial){
-      return `<div class="board-cell-inner turn-cell-inner"><div class="turn-values"><span class="turn-value">${turn.start}</span></div></div>`;
-    }
-    const valuesHtml = `
-      <span class="turn-value crossed-out-value">${turn.start}</span>
-      <span class="turn-value">${turn.end}</span>
-    `;
-    const bustHtml = turn.bust ? '<div class="turn-badge">BUST</div>' : '';
-    return `
-      <div class="board-cell-inner turn-cell-inner">
-        <div class="turn-values">${valuesHtml}</div>
-        ${bustHtml}
-      </div>
-    `;
-  };
-
-  const buildShanghaiRounds = () => {
-    const roundsByPlayer = new Map(activeBoardGame.players.map((player) => [player.id, new Map()]));
-    for(const throwRecord of activeBoardSession.throws){
-      const roundKey = throwRecord.round || 1;
-      const playerRounds = roundsByPlayer.get(throwRecord.playerId);
-      if(!playerRounds.has(roundKey)){
-        playerRounds.set(roundKey, []);
-      }
-      playerRounds.get(roundKey).push(throwRecord);
-    }
-    return roundsByPlayer;
-  };
-
-  if(activeBoardSession.gameKey === 'cricket'){
-    const targets = [20, 19, 18, 17, 16, 15, 'BULL'];
-    scoreboardEl.innerHTML = renderBoard({
-      centerHeader: descriptor.label,
-      rowLabels: targets,
-      cellFor: (player, _rowIndex, target) => renderCricketCell(player, target),
-      footerLabel: 'Pts',
-      footerFor: (player) => `<div class="board-footer-value">${player.score || 0}</div>`
-    });
-    syncScoreboardState();
-    return;
-  }
-
-  if(activeBoardSession.gameKey === 'shanghai'){
-    const roundsByPlayer = buildShanghaiRounds();
-    const configuredRounds = Number(activeBoardGame.maxRound || 20);
-    const isLiveTieBreaker = !isCompleted && Boolean(activeBoardGame.tiebreakMode);
-    const tieBreakerTarget = Number(activeBoardGame.tiebreakTarget || 1);
-    const tieBreakerRound = Number(activeBoardGame.tiebreakRound || 1);
-    const rowLabels = isLiveTieBreaker
-      ? [tieBreakerTarget]
-      : Array.from({ length: configuredRounds }, (_, index) => index + 1);
-    scoreboardEl.innerHTML = renderBoard({
-      centerHeader: isLiveTieBreaker ? `${descriptor.label} • Tiebreak` : descriptor.label,
-      rowLabels,
-      cellFor: (player, _rowIndex, roundLabel) => {
-        const entries = isLiveTieBreaker
-          ? activeBoardSession.throws.filter((entry) => (
-            entry.playerId === player.id
-            && entry.isTieBreaker === true
-            && Number(entry.tieBreakerRound || 0) === tieBreakerRound
-          ))
-          : (roundsByPlayer.get(player.id)?.get(roundLabel) || []);
-        if(entries.length === 0){
-          return '<div class="board-cell-inner"></div>';
-        }
-        const total = isLiveTieBreaker
-          ? entries.reduce((sum, entry) => sum + Number(entry.awardedScore || 0), 0)
-          : getShanghaiRoundTotal(entries, roundLabel);
-        return `
-          <div class="board-cell-inner round-cell-inner">
-            <div class="round-score">${total}</div>
-          </div>
-        `;
-      },
-      footerLabel: 'Tot',
-      footerFor: (player) => `
-        <div class="board-footer-value">${player.score || 0}</div>
-        <div class="board-footer-meta">${player.meta.triples || 0}T</div>
-      `
-    });
-    syncScoreboardState();
-    return;
-  }
-
-  const startScore = activeBoardGame.startScore || Number.parseInt(activeBoardSession.gameKey, 10) || 0;
-  const turnsByPlayer = buildCountDownTurns();
-
-  const buildPlayerStack = (player) => {
-    const turns = turnsByPlayer.get(player.id) || [];
-    const items = [{ type: 'score', value: startScore }];
-    for(const turn of turns){
-      items.push(turn.bust ? { type: 'bust' } : { type: 'score', value: turn.end });
-    }
-    let lastScoreIdx = -1;
-    for(let i = items.length - 1; i >= 0; i--){
-      if(items[i].type === 'score'){ lastScoreIdx = i; break; }
-    }
-    const stackHtml = items.map((item, i) => {
-      if(item.type === 'bust') return '<div class="turn-badge">BUST</div>';
-      const crossed = i < lastScoreIdx ? ' crossed-out-value' : '';
-      return `<div class="turn-value${crossed}">${item.value}</div>`;
-    }).join('');
-    return `<div class="board-cell-inner countdown-cell"><div class="countdown-stack">${stackHtml}</div></div>`;
-  };
-
-  scoreboardEl.innerHTML = renderBoard({
-    centerHeader: descriptor.label,
-    rowLabels: [''],
-    cellFor: (player) => buildPlayerStack(player),
-    hideRowLabels: true,
-    noFooter: true
-  });
+  scoreboardEl.innerHTML = renderScoreboardHtml(displayedState, GAME_REGISTRY);
   syncScoreboardState();
 }
 
@@ -1364,15 +889,6 @@ function updateHUD(message = 'Ready'){
     ? 'State: <span class="throw-at-value">Finished</span>'
     : `Target: <span class="throw-at-value">${getThrowAtTarget()}</span>`;
   renderScoreboard();
-}
-
-function getShanghaiFinishRound(record){
-  if(record?.shanghaiFinishRound){
-    return Number(record.shanghaiFinishRound) || null;
-  }
-  const message = record?.notes || '';
-  const match = /wins with a shanghai on\s+(\d+)/i.exec(message);
-  return match ? Number(match[1]) : null;
 }
 
 function getThrowAtTarget(){
@@ -1448,7 +964,7 @@ async function persistActiveSnapshot(){
 async function finalizeGame(result){
   const winners = result.winners ? result.winners.map((player) => player.name) : (result.winner ? [result.winner.name] : []);
   const shanghaiFinishRound = session.gameKey === 'shanghai'
-    ? getShanghaiFinishRound({ notes: result.message || '' })
+    ? Number(result.shanghaiFinishRound || getShanghaiFinishRound({ notes: result.message || '' }) || 0) || null
     : null;
   const tieBreakerSummary = session.gameKey === 'shanghai' ? structuredClone(game.tieBreakerHistory || null) : null;
   completedGameView = {
@@ -1557,16 +1073,6 @@ async function confirmPendingThrow(){
     const hit = selection.hit;
     addThrowStats(activePlayer, hit);
     const throwNumber = game.throwsThisTurn + 1;
-    const roundAtThrow = game.round || null;
-    const shanghaiTargetAtThrow = session.gameKey === 'shanghai' && typeof game.getCurrentTarget === 'function'
-      ? game.getCurrentTarget()
-      : roundAtThrow;
-    const shanghaiRoundForRecord = session.gameKey === 'shanghai' && typeof game.getRoundForRecord === 'function'
-      ? game.getRoundForRecord()
-      : roundAtThrow;
-    const tieBreakerMeta = session.gameKey === 'shanghai' && typeof game.getTieBreakerThrowMeta === 'function'
-      ? game.getTieBreakerThrowMeta()
-      : null;
     const scoreBefore = activePlayer.score ?? 0;
 
     const result = game.onThrow({
@@ -1577,27 +1083,24 @@ async function confirmPendingThrow(){
       isDouble: hit.isDouble
     });
 
-    // awardedScore = points actually added (or removed in x01) from a player's visible total.
-    // For x01 and cricket, use score deltas so bust/blocked throws contribute 0.
-    // For Shanghai, use the round-specific awarded score.
-    let awardedScore;
-    if(session.gameKey === 'shanghai'){
-      awardedScore = getShanghaiAwardedScore(
-        shanghaiTargetAtThrow,
-        hit.target,
-        hit.multiplier,
-        hit.score,
-        game.scoringMode
-      );
-    } else if(session.gameKey === 'cricket'){
-      awardedScore = Math.max(0, (activePlayer.score ?? 0) - scoreBefore);
-    } else if(session.gameKey === '501' || session.gameKey === '301'){
-      awardedScore = Math.max(0, scoreBefore - (activePlayer.score ?? 0));
-    } else {
-      awardedScore = hit.score;
-    }
+    const awardedScore = typeof game.getAwardedScoreForThrow === 'function'
+      ? game.getAwardedScoreForThrow({
+        hit,
+        player: activePlayer,
+        result,
+        scoreBefore
+      })
+      : hit.score;
+    const throwMeta = typeof game.getThrowRecordMeta === 'function'
+      ? game.getThrowRecordMeta({
+        hit,
+        player: activePlayer,
+        result,
+        throwNumber
+      })
+      : { round: game.round || null };
 
-    if(session.gameKey === 'shanghai' && result.message?.includes('wins with a Shanghai')){
+    if(session.gameKey === 'shanghai' && (result.shanghaiFinishRound || result.message?.includes('wins with a Shanghai'))){
       activePlayer.meta.shanghaiWins = (activePlayer.meta.shanghaiWins || 0) + 1;
     }
 
@@ -1613,10 +1116,10 @@ async function confirmPendingThrow(){
       turnReset: Boolean(result.turnReset),
       turnResetReason: result.turnResetReason || null,
       throwNumber,
-      round: session.gameKey === 'shanghai' ? shanghaiRoundForRecord : roundAtThrow,
-      shanghaiTarget: session.gameKey === 'shanghai' ? shanghaiTargetAtThrow : null,
+      round: throwMeta.round || null,
+      shanghaiTarget: throwMeta.shanghaiTarget || null,
       message: result.message || '',
-      ...(tieBreakerMeta || {})
+      ...throwMeta
     });
 
     if(result.turnResetReason === 'double-out-required'){
@@ -1640,341 +1143,6 @@ async function confirmPendingThrow(){
 function resetSessionUI(){
   historyDetail.innerHTML = '<div class="text-muted">Select a finished game to inspect players and throws.</div>';
   clearPendingSelections();
-}
-
-function escapeHtml(value){
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function getVisitKey(visit){
-  return `${visit.playerName}::${visit.visitNumber}`;
-}
-
-function getMatchStateForVisit(record, visit, stateByVisit){
-  return stateByVisit.get(getVisitKey(visit)) || '—';
-}
-
-function buildMatchStateByVisit(record, visits){
-  const gameType = record.game;
-  const result = new Map();
-
-  if(gameType === 'cricket'){
-    const targetOrder = [20, 19, 18, 17, 16, 15, 'BULL'];
-    const hitsByPlayer = new Map();
-
-    for(const visit of visits){
-      if(!hitsByPlayer.has(visit.playerName)){
-        const initial = {};
-        targetOrder.forEach((target) => {
-          initial[target] = 0;
-        });
-        hitsByPlayer.set(visit.playerName, initial);
-      }
-
-      const hits = hitsByPlayer.get(visit.playerName);
-      for(const throwRecord of visit.throws){
-        if(throwRecord.target in hits){
-          hits[throwRecord.target] += throwRecord.multiplier || 1;
-        }
-      }
-
-      const closed = targetOrder
-        .filter((target) => hits[target] >= 3)
-        .map((target) => target === 'BULL' ? 'B' : String(target))
-        .join(',');
-      result.set(getVisitKey(visit), closed || '—');
-    }
-    return result;
-  }
-
-  if(gameType === 'shanghai'){
-    const scoresByPlayer = new Map();
-    for(const visit of visits){
-      const previous = scoresByPlayer.get(visit.playerName) || 0;
-      const scoredThisVisit = visit.throws.reduce((sum, throwRecord) => sum + (throwRecord.awardedScore ?? throwRecord.score ?? 0), 0);
-      const total = previous + scoredThisVisit;
-      scoresByPlayer.set(visit.playerName, total);
-      result.set(getVisitKey(visit), String(total || '—'));
-    }
-    return result;
-  }
-
-  if(gameType === '501' || gameType === '301'){
-    const startScore = gameType === '501' ? 501 : 301;
-    const remainingByPlayer = new Map();
-    for(const visit of visits){
-      const currentRemaining = remainingByPlayer.has(visit.playerName)
-        ? remainingByPlayer.get(visit.playerName)
-        : startScore;
-
-      const isBust = visit.throws.some((throwRecord) => (throwRecord.message || '').toLowerCase().includes('bust'));
-      const isDoubleOutMiss = visit.throws.some((throwRecord) => throwRecord.turnResetReason === 'double-out-required');
-      const isTurnReset = visit.throws.some((throwRecord) => throwRecord.turnReset === true);
-      if(isBust){
-        result.set(getVisitKey(visit), `${currentRemaining} BUST`);
-        continue;
-      }
-      if(isDoubleOutMiss){
-        result.set(getVisitKey(visit), `${currentRemaining} NO-DOUBLE-OUT`);
-        continue;
-      }
-      if(isTurnReset){
-        result.set(getVisitKey(visit), String(currentRemaining));
-        continue;
-      }
-
-      const scoredThisVisit = visit.throws.reduce((sum, throwRecord) => sum + (throwRecord.awardedScore ?? throwRecord.score ?? 0), 0);
-      const nextRemaining = Math.max(0, currentRemaining - scoredThisVisit);
-      remainingByPlayer.set(visit.playerName, nextRemaining);
-      result.set(getVisitKey(visit), String(nextRemaining));
-    }
-    return result;
-  }
-
-  for(const visit of visits){
-    result.set(getVisitKey(visit), '—');
-  }
-  return result;
-}
-
-function isNonScoringGame(record){
-  return record.scoringEnabled === false;
-}
-
-function getChronologicalThrows(record){
-  return (record.throws || [])
-    .map((throwRecord, index) => ({ ...throwRecord, __index: index }))
-    .sort((left, right) => {
-      if((left.at || 0) !== (right.at || 0)){
-        return (left.at || 0) - (right.at || 0);
-      }
-      return left.__index - right.__index;
-    });
-}
-
-function formatDartCompact(throwRecord){
-  if(throwRecord.target === 'MISS' || throwRecord.multiplier === 0){
-    return 'MISS';
-  }
-  const target = throwRecord.target === 'BULL' ? 'B' : throwRecord.target;
-  const ring = throwRecord.ring || 'S';
-  return `${ring}${target}`;
-}
-
-function buildVisitOrder(record){
-  const chronologicalThrows = getChronologicalThrows(record);
-  const nonScoring = isNonScoringGame(record);
-  const playerVisitCount = new Map((record.players || []).map((player) => [player.name, 0]));
-  const visits = [];
-  let currentVisit = null;
-  let visitSequence = 0;
-
-  for(const throwRecord of chronologicalThrows){
-    const playerName = throwRecord.playerName || 'Unknown';
-    const throwNumber = Number(throwRecord.throwNumber || 1);
-
-    if(!playerVisitCount.has(playerName)){
-      playerVisitCount.set(playerName, 0);
-    }
-
-    if(!currentVisit || currentVisit.playerName !== playerName || throwNumber === 1){
-      const nextVisit = (playerVisitCount.get(playerName) || 0) + 1;
-      playerVisitCount.set(playerName, nextVisit);
-      currentVisit = {
-        round: Number(throwRecord.round || 0),
-        playerName,
-        visitNumber: nextVisit,
-        sequence: visitSequence,
-        throws: [],
-        darts: [],
-        total: 0
-      };
-      visitSequence += 1;
-      visits.push(currentVisit);
-    }
-
-    const dartScore = nonScoring ? 0 : Number(throwRecord.awardedScore ?? throwRecord.score ?? 0);
-    currentVisit.throws.push(throwRecord);
-    currentVisit.darts.push({
-      dart: throwNumber,
-      label: formatDartCompact(throwRecord),
-      score: dartScore
-    });
-    currentVisit.total += dartScore;
-  }
-
-  const playerCount = Math.max(1, (record.players || []).length || 1);
-  visits.forEach((visit, index) => {
-    if(!visit.round || Number.isNaN(visit.round)){
-      visit.round = Math.floor(index / playerCount) + 1;
-    }
-  });
-
-  visits.sort((left, right) => {
-    if(left.sequence !== right.sequence){
-      return left.sequence - right.sequence;
-    }
-    if(left.round !== right.round){
-      return left.round - right.round;
-    }
-    return left.visitNumber - right.visitNumber;
-  });
-
-  return { visits, chronologicalThrows };
-}
-
-function buildPlayerPerformanceRows(record, visitData){
-  const throwsByPlayer = new Map();
-  for(const throwRecord of visitData.chronologicalThrows){
-    const playerName = throwRecord.playerName || 'Unknown';
-    if(!throwsByPlayer.has(playerName)){
-      throwsByPlayer.set(playerName, []);
-    }
-    throwsByPlayer.get(playerName).push(throwRecord);
-  }
-
-  const visitsByPlayer = new Map();
-  for(const visit of visitData.visits){
-    if(!visitsByPlayer.has(visit.playerName)){
-      visitsByPlayer.set(visit.playerName, []);
-    }
-    visitsByPlayer.get(visit.playerName).push(visit);
-  }
-
-  const nonScoring = isNonScoringGame(record);
-
-  return (record.players || []).map((player) => {
-    const playerThrows = throwsByPlayer.get(player.name) || [];
-    const totalThrows = playerThrows.length;
-    const totalAwarded = nonScoring ? 0 : playerThrows.reduce((sum, throwRecord) => sum + Number(throwRecord.awardedScore ?? throwRecord.score ?? 0), 0);
-    const firstNine = nonScoring ? 0 : playerThrows.slice(0, 9).reduce((sum, throwRecord) => sum + Number(throwRecord.awardedScore ?? throwRecord.score ?? 0), 0);
-    const firstThree = nonScoring ? 0 : playerThrows.slice(0, 3).reduce((sum, throwRecord) => sum + Number(throwRecord.awardedScore ?? throwRecord.score ?? 0), 0);
-    const firstThreePercent = totalAwarded > 0 ? ((firstThree / totalAwarded) * 100) : 0;
-    const firstNinePercent = totalAwarded > 0 ? ((firstNine / totalAwarded) * 100) : 0;
-    const playerVisits = visitsByPlayer.get(player.name) || [];
-    const bestRound = playerVisits.reduce((best, visit) => Math.max(best, visit.total), 0);
-    const doublesHit = playerThrows.filter((throwRecord) => throwRecord.ring === 'D').length;
-    const triplesHit = playerThrows.filter((throwRecord) => throwRecord.ring === 'T').length;
-    const bullsHit = playerThrows.filter((throwRecord) => throwRecord.target === 'BULL').length;
-
-    return `
-      <tr>
-        <td>${escapeHtml(player.name)}</td>
-        <td>${Number(player.score || 0)}</td>
-        <td>${firstThreePercent.toFixed(1)}%</td>
-        <td>${firstNinePercent.toFixed(1)}%</td>
-        <td>${bestRound}</td>
-        <td>${doublesHit}</td>
-        <td>${triplesHit}</td>
-        <td>${bullsHit}</td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function renderHistoryDetailHtml(record){
-  const visitData = buildVisitOrder(record);
-  const playerRows = buildPlayerPerformanceRows(record, visitData);
-  const stateByVisit = buildMatchStateByVisit(record, visitData.visits);
-  const roundOrderVisits = visitData.visits.filter((visit) => !visit.throws.some((throwRecord) => throwRecord.isTieBreaker === true));
-  const shanghaiFinishRound = getShanghaiFinishRound(record);
-  const tieBreakerSummary = record.tieBreakerSummary || null;
-  const tieBreakerReasonLabelMap = {
-    'equal-score-no-triples': 'Equal high score with no triples',
-    'equal-score-equal-triples': 'Equal high score and equal triples'
-  };
-  const tieBreakerReasonLabel = tieBreakerSummary
-    ? (tieBreakerReasonLabelMap[tieBreakerSummary.reason] || 'Tie-break required')
-    : null;
-  const winnerLabel = record.winners?.length > 1
-    ? `Winners: ${record.winners.join(', ')}`
-    : `Winner: ${record.winner || 'Tie'}`;
-  const winnerFlair = shanghaiFinishRound
-    ? `<span class="shanghai-finish-badge ms-2">SHANGHAI FINISH • ${shanghaiFinishRound}</span>`
-    : '';
-
-  const tieBreakerRows = (tieBreakerSummary?.rounds || []).map((round) => {
-    const scoreLine = (round.scores || [])
-      .map((entry) => `${escapeHtml(entry.player)}: ${Number(entry.score || 0)}`)
-      .join(' | ');
-    return `
-      <tr>
-        <td>${Number(round.round || 0)}</td>
-        <td>${Number(round.target || 0)}</td>
-        <td>${escapeHtml((round.leaders || []).join(', ') || '-')}</td>
-        <td>${Number(round.highScore || 0)}</td>
-        <td>${scoreLine || '-'}</td>
-      </tr>
-    `;
-  }).join('');
-
-  const visitRows = roundOrderVisits.map((visit) => {
-    const matchState = getMatchStateForVisit(record, visit, stateByVisit);
-    const formattedMatchState = (() => {
-      if(typeof matchState === 'string' && matchState.endsWith(' BUST')){
-        const value = escapeHtml(matchState.replace(/\s*BUST$/, '').trim());
-        return `${value} <span class="turn-badge">BUST</span>`;
-      }
-      if(typeof matchState === 'string' && matchState.endsWith(' NO-DOUBLE-OUT')){
-        const value = escapeHtml(matchState.replace(/\s*NO-DOUBLE-OUT$/, '').trim());
-        return `${value} <span class="turn-badge turn-badge-double-out" title="Did not double out">NO D/O</span>`;
-      }
-      return escapeHtml(matchState);
-    })();
-    return `
-      <tr>
-        <td>R${visit.round}</td>
-        <td>${escapeHtml(visit.playerName)}</td>
-        <td>${visit.visitNumber}</td>
-        <td>${visit.darts.map((dart) => dart.label).join(' • ')}</td>
-        <td>${visit.total}</td>
-        <td>${formattedMatchState}</td>
-      </tr>
-    `;
-  }).join('');
-
-  return `
-    <div class="history-detail-card card card-body mt-3">
-      <div><strong>${escapeHtml(record.gameLabel || record.game)}</strong></div>
-      <div class="text-muted small mb-2">Started ${new Date(record.startedAt).toLocaleString()} • Finished ${new Date(record.finishedAt).toLocaleString()}</div>
-      <div class="mb-3"><strong>${escapeHtml(winnerLabel)}</strong>${winnerFlair}</div>
-      <h3 class="h6">Performance Snapshot</h3>
-      <div class="table-responsive mb-3">
-        <table class="table table-sm table-striped">
-          <thead>
-            <tr><th>Player</th><th>Score</th><th>1st 3 %</th><th>1st 9 %</th><th>Best Round</th><th>D</th><th>T</th><th>Bull</th></tr>
-          </thead>
-          <tbody>${playerRows || '<tr><td colspan="8">No player stats yet.</td></tr>'}</tbody>
-        </table>
-      </div>
-      <h3 class="h6">Round Order (Actual Throw Sequence)</h3>
-      <div class="table-responsive mb-3">
-        <table class="table table-sm table-hover">
-          <thead>
-            <tr><th>Round</th><th>Player</th><th>Player Round</th><th>Darts (Thrown Order)</th><th>Round Score</th><th>Match State</th></tr>
-          </thead>
-          <tbody>${visitRows || '<tr><td colspan="6">No rounds recorded.</td></tr>'}</tbody>
-        </table>
-      </div>
-      ${tieBreakerSummary ? `
-        <h3 class="h6">Tie-Breaker Data</h3>
-        <div class="text-muted small mb-2">${escapeHtml(tieBreakerReasonLabel)} • Start Target ${Number(tieBreakerSummary.startingTarget || 0)} • Winner ${escapeHtml(tieBreakerSummary.winner || record.winner || 'N/A')}</div>
-        <div class="table-responsive mb-3">
-          <table class="table table-sm table-striped">
-            <thead>
-              <tr><th>TB Round</th><th>Target</th><th>Leaders</th><th>High Score</th><th>Per-Player Score</th></tr>
-            </thead>
-            <tbody>${tieBreakerRows || '<tr><td colspan="5">No tie-break rounds recorded.</td></tr>'}</tbody>
-          </table>
-        </div>
-      ` : ''}
-    </div>
-  `;
 }
 
 function getFilteredHistoryRecords(){

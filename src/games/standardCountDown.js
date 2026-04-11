@@ -95,4 +95,8 @@ export class StandardCountDown extends BaseGame{
       turnResetReason
     };
   }
+
+  getAwardedScoreForThrow({ scoreBefore, player }){
+    return Math.max(0, Number(scoreBefore || 0) - Number(player?.score || 0));
+  }
 }

@@ -18,4 +18,14 @@ export class BaseGame{
   activePlayerName(){
     return this.currentPlayer().name;
   }
+
+  getAwardedScoreForThrow({ hit }){
+    return Number(hit?.score || 0);
+  }
+
+  getThrowRecordMeta(){
+    return {
+      round: this.round || null
+    };
+  }
 }

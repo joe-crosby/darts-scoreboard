@@ -142,4 +142,8 @@ export class Cricket extends BaseGame{
     }
     return {player:p,finished:this.finished,winner:this.winners[0] ?? null,message};
   }
+
+  getAwardedScoreForThrow({ scoreBefore, player }){
+    return Math.max(0, Number(player?.score || 0) - Number(scoreBefore || 0));
+  }
 }
