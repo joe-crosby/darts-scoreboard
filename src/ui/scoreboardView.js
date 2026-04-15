@@ -253,7 +253,6 @@ export function renderScoreboardHtml(displayedState, gameRegistry){
     const configuredRounds = Number(game.maxRound || 20);
     const isLiveTieBreaker = !isCompleted && Boolean(game.tiebreakMode);
     const tieBreakerTarget = Number(game.tiebreakTarget || 1);
-    const tieBreakerRound = Number(game.tiebreakRound || 1);
     const rowLabels = isLiveTieBreaker
       ? [tieBreakerTarget]
       : Array.from({ length: configuredRounds }, (_, index) => index + 1);
@@ -269,7 +268,7 @@ export function renderScoreboardHtml(displayedState, gameRegistry){
           ? session.throws.filter((entry) => (
             entry.playerId === player.id
             && entry.isTieBreaker === true
-            && Number(entry.tieBreakerRound || 0) === tieBreakerRound
+            && Number(entry.round || 0) === game.round
           ))
           : (roundsByPlayer.get(player.id)?.get(roundLabel) || []);
 

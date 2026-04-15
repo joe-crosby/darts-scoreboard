@@ -1156,6 +1156,8 @@ async function confirmPendingThrow(){
 
     appendLog(`${activePlayer.name} hit ${hit.target} ${hit.ring} for ${hit.score}. ${result.message || ''}`.trim());
 
+    game.incrementRound();
+    
     if(result.finished){
       await persistActiveSnapshot();
       await finalizeGame(result);

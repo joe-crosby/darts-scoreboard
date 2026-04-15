@@ -16,7 +16,7 @@ export class Shanghai extends BaseGame{
     this.turnSegments = {S:false,D:false,T:false};
     this.tiebreakMode = false;
     this.tiebreakPlayers = [];
-    this.tiebreakRound = 0;
+    // this.tiebreakRound removed; use this.round for all phases
     this.tiebreakTarget = null;
     this.tiebreakReason = null;
     this.tiebreakScores = new Map();
@@ -30,10 +30,7 @@ export class Shanghai extends BaseGame{
   }
 
   getRoundForRecord(){
-    if(!this.tiebreakMode){
-      return this.round;
-    }
-    return this.maxRound + this.tiebreakRound;
+    return this.round;
   }
 
   getTieBreakerThrowMeta(){
@@ -42,7 +39,6 @@ export class Shanghai extends BaseGame{
     }
     return {
       isTieBreaker: true,
-      tieBreakerRound: this.tiebreakRound,
       tieBreakerTarget: this.tiebreakTarget,
       tieBreakerReason: this.tiebreakReason
     };
@@ -73,7 +69,6 @@ export class Shanghai extends BaseGame{
     this.tiebreakMode = true;
     this.tiebreakPlayers = [...players];
     this.tiebreakReason = reason;
-    this.tiebreakRound = 1;
     this.tiebreakTarget = ((this.round - 1) % 20) + 1;
     this.tiebreakScores = new Map(this.tiebreakPlayers.map((player) => [player.id, 0]));
     this.currentPlayerIndex = this.players.indexOf(this.tiebreakPlayers[0]);
@@ -152,7 +147,7 @@ export class Shanghai extends BaseGame{
     const roundLeaders = this.tiebreakPlayers.filter((player) => (this.tiebreakScores.get(player.id) || 0) === maxRoundScore);
 
     const roundSummary = {
-      round: this.tiebreakRound,
+      round: this.round,
       target: this.tiebreakTarget,
       leaders: roundLeaders.map((player) => player.name),
       highScore: maxRoundScore,
@@ -170,7 +165,7 @@ export class Shanghai extends BaseGame{
       this.tieBreakerHistory = {
         ...this.tieBreakerHistory,
         winner: roundLeaders[0].name,
-        resolvedRound: this.tiebreakRound,
+        resolvedRound: this.round,
         resolvedTarget: this.tiebreakTarget
       };
       this.log.push({type:'finish',player:roundLeaders[0].name,mode:'shanghai-tiebreak'});
@@ -182,7 +177,7 @@ export class Shanghai extends BaseGame{
       };
     }
 
-    this.tiebreakRound += 1;
+    this.round++;
     this.tiebreakTarget = (this.tiebreakTarget % 20) + 1;
     this.tiebreakPlayers = roundLeaders;
     this.tiebreakScores = new Map(this.tiebreakPlayers.map((player) => [player.id, 0]));
@@ -262,13 +257,23 @@ export class Shanghai extends BaseGame{
           message = tiebreakResult.message;
         }
       } else if(turnAdvance.cycleCompleted){
-        this.round++;
-        if(this.round>this.maxRound){
+        // move this to a function this.round++;
+        if(this.round + 1>this.maxRound){
           return this.resolveMainGameEnd(p);
         }
+        // this.round++;
+        // if(this.round>this.maxRound){
+        //   return this.resolveMainGameEnd(p);
+        // }
       }
       this.turnSegments = {S:false,D:false,T:false};
     }
     return {player:p,finished:this.finished,winner:this.winners[0] ?? null,message};
+  }
+
+  incrementRound(){
+    if (this.currentPlayerIndex === 0 && this.throwsThisTurn === 0) {
+      this.round++;
+    }
   }
 }

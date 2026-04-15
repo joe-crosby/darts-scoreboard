@@ -1,5 +1,6 @@
-const CACHE = 'darts-cache-v8';
+const CACHE = 'darts-cache-v1.2';
 const ASSETS = [
+  '/',
   './index.html',
   './styles.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css',
@@ -16,7 +17,8 @@ const ASSETS = [
   './src/games/baseGame.js',
   './src/games/standardCountDown.js',
   './src/games/cricket.js',
-  './src/games/shanghai.js'
+  './src/games/shanghai.js',
+  './src/games/shanghaiScoring.js'
 ];
 
 self.addEventListener('install', e=>{

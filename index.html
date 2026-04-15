@@ -54,8 +54,8 @@
             <div>
               <label class="form-label fw-semibold" for="cricket-mode">Cricket Mode</label>
               <select id="cricket-mode" class="form-select w-auto">
-                <option value="standard-points" selected>Standard (Points Enabled)</option>
-                <option value="standard-no-points">Standard (Points Disabled)</option>
+                <option value="standard-no-points" selected>Standard (Points Disabled)</option>
+                <option value="standard-points">Standard (Points Enabled)</option>
                 <option value="cutthroat">Cut-throat</option>
               </select>
             </div>
@@ -98,17 +98,17 @@
               <div>
                 <label class="form-label fw-semibold" for="shanghai-scoring-mode">Scoring Mode</label>
                 <select id="shanghai-scoring-mode" class="form-select w-auto">
+                  <option value="Standard (Multiplier) Scoring" selected>Standard (Multiplier) Scoring</option>
                   <option value="Flat Scoring">Flat Scoring</option>
                   <option value="Ring Scoring">Ring Scoring</option>
-                  <option value="Standard (Multiplier) Scoring" selected>Standard (Multiplier) Scoring</option>
                 </select>
               </div>
             </div>
             <details class="small text-muted mt-2">
               <summary>Scoring mode details</summary>
+              <div class="mt-1"><strong>Standard (Multiplier) Scoring:</strong> Single = target × 1, Double = target × 2, Triple = target × 3.</div>
               <div class="mt-2"><strong>Flat Scoring:</strong> Any hit on the active target number scores 1 point, regardless of single/double/triple.</div>
               <div class="mt-1"><strong>Ring Scoring:</strong> On the active target number, Single = 1 point, Double = 2 points, Triple = 3 points.</div>
-              <div class="mt-1"><strong>Standard (Multiplier) Scoring:</strong> Single = target × 1, Double = target × 2, Triple = target × 3.</div>
             </details>
           </div>
           <div class="d-flex gap-2">
@@ -228,5 +228,14 @@
   </main>
 
   <script type="module" src="./src/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registered:', reg))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>

@@ -28,4 +28,10 @@ export class BaseGame{
       round: this.round || null
     };
   }
+
+  incrementRound(){
+      if (this.currentPlayerIndex === 0 && this.throwsThisTurn === 0) { 
+        this.round = (this.round || 1) + 1;
+      }
+  }
 }
