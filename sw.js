@@ -33,6 +33,8 @@ self.addEventListener('activate', e=>{
   );
 });
 
-self.addEventListener('fetch', e=>{
-  e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request)));
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
 });
