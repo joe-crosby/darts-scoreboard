@@ -17,11 +17,15 @@ const showSavedGamesBtn = document.getElementById('show-saved-games');
 const savedGamesEl = document.getElementById('saved-games');
 const closeSavedGamesBtn = document.getElementById('close-saved-games');
 const resumeListEl = document.getElementById('resume-list');
-const playersInput = document.getElementById('players-input');
 const themeSelectEl = document.getElementById('theme-select');
 const pickExistingUsersBtn = document.getElementById('pick-existing-users');
 const clearAddedUsersBtn = document.getElementById('clear-added-users');
 const selectedExistingUsersSummaryEl = document.getElementById('selected-existing-users-summary');
+const addPlayersModalEl = document.getElementById('add-players-modal');
+const openAddPlayersModalBtn = document.getElementById('open-add-players-modal');
+const addPlayersConfirmBtn = document.getElementById('add-players-confirm');
+const addPlayersCancelBtn = document.getElementById('add-players-cancel');
+const addedPlayersTableBody = document.querySelector('#added-players-table tbody');
 const existingUsersModalEl = document.getElementById('existing-users-modal');
 const existingUsersPickerListEl = document.getElementById('existing-users-picker-list');
 const existingUsersPickerEmptyEl = document.getElementById('existing-users-picker-empty');
@@ -94,6 +98,7 @@ let historyViewMode = 'history';
 let snapshotCache = [];
 let sessionWasResumed = false;
 let knownUsers = [];
+let gamePlayers = [];
 let selectedExistingUsers = [];
 let existingUsersModalMode = 'add';
 let toastHideTimer = null;
@@ -203,30 +208,69 @@ async function initializeKnownUsers(){
 }
 
 function getSelectedExistingUsers(){
-  return [...selectedExistingUsers];
+  // For compatibility, return the known users in the current game
+  return gamePlayers.filter(name => knownUsers.some(u => playerNameKey(u) === playerNameKey(name)));
 }
 
 function updateSelectedExistingUsersSummary(){
   if(!selectedExistingUsersSummaryEl){
     return;
   }
-  if(selectedExistingUsers.length === 0){
+  // Show how many of the current gamePlayers are known users
+  const knownInGame = gamePlayers.filter(name => knownUsers.some(u => playerNameKey(u) === playerNameKey(name)));
+  if(knownInGame.length === 0){
     selectedExistingUsersSummaryEl.textContent = 'No existing users included.';
     if(clearAddedUsersBtn){
       clearAddedUsersBtn.disabled = true;
     }
     return;
   }
-  selectedExistingUsersSummaryEl.textContent = `${selectedExistingUsers.length} included: ${selectedExistingUsers.join(', ')}`;
+  selectedExistingUsersSummaryEl.textContent = `${knownInGame.length} included: ${knownInGame.join(', ')}`;
   if(clearAddedUsersBtn){
     clearAddedUsersBtn.disabled = false;
   }
+  renderAddedPlayersTable();
+}
+
+function renderAddedPlayersTable() {
+  const flexContainer = document.getElementById('added-players-flex');
+  if (!flexContainer) return;
+  // Remove all chips except the caption
+  Array.from(flexContainer.querySelectorAll('.player-chip, .no-players')).forEach(el => el.remove());
+  if (gamePlayers.length === 0) {
+    const empty = document.createElement('span');
+    empty.className = 'no-players text-muted';
+    empty.textContent = 'No players added.';
+    flexContainer.appendChild(empty);
+    return;
+  }
+  gamePlayers.forEach((name, idx) => {
+    const chip = document.createElement('span');
+    chip.className = 'player-chip d-inline-flex align-items-center';
+    chip.textContent = name;
+
+    // Add remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-remove-player ms-2 p-0 lh-1';
+    removeBtn.setAttribute('aria-label', `Remove ${name}`);
+    removeBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
+    removeBtn.addEventListener('click', () => {
+      gamePlayers.splice(idx, 1);
+      renderAddedPlayersTable();
+      updateSelectedExistingUsersSummary();
+    });
+    chip.appendChild(removeBtn);
+
+    flexContainer.appendChild(chip);
+  });
 }
 
 function clearAddedExistingUsers(){
-  selectedExistingUsers = [];
+  gamePlayers = [];
   updateSelectedExistingUsersSummary();
-  renderKnownUsers(selectedExistingUsers);
+  renderKnownUsers([]);
+  renderAddedPlayersTable();
 }
 
 function updateExistingUsersModalControls(){
@@ -279,7 +323,7 @@ function renderKnownUsers(selected = []){
   pickExistingUsersBtn.disabled = false;
 
   knownUsers.forEach((userName, index) => {
-    const wrapper = document.createElement('div');
+    const wrapper = document.createElement('li');
     wrapper.className = 'existing-user-row';
 
     const main = document.createElement('div');
@@ -385,16 +429,16 @@ function applyExistingUsersSelection(){
   if(!existingUsersPickerListEl){
     return;
   }
-
-  selectedExistingUsers = getCheckedExistingUsersInModal();
-  if(selectedExistingUsers.length === 0){
+  const checked = getCheckedExistingUsersInModal();
+  if(checked.length === 0){
     updateExistingUsersSelectionButtons();
     return;
   }
-
-  selectedExistingUsers = uniquePlayerNames(selectedExistingUsers);
+  // Add checked users to gamePlayers, avoiding duplicates
+  gamePlayers = uniquePlayerNames([...gamePlayers, ...checked]);
   updateSelectedExistingUsersSummary();
   closeExistingUsersModal();
+  renderAddedPlayersTable();
 }
 
 function clearExistingUsersSelection(){
@@ -464,7 +508,7 @@ async function renameExistingUser(userName){
 
   const nextName = normalizePlayerName(nextNameRaw);
   if(!nextName){
-    await showMessage('Name cannot be empty.', 'Invalid Name', 'warning');
+    await showMessage('Name cannot be empty.', 'Invalid Name', 'error');
     return;
   }
 
@@ -474,7 +518,7 @@ async function renameExistingUser(userName){
 
   const conflict = knownUsers.some((name) => playerNameKey(name) === playerNameKey(nextName));
   if(conflict){
-    await showMessage(`A user named \"${nextName}\" already exists.`, 'Duplicate Name', 'warning');
+    await showMessage(`A user named \"${nextName}\" already exists.`, 'Duplicate Name', 'error');
     return;
   }
 
@@ -638,41 +682,6 @@ function syncScoreboardState(){
   }
 }
 
-function getToastEl(){
-  let toastEl = document.getElementById('app-toast');
-  if(toastEl){
-    return toastEl;
-  }
-  toastEl = document.createElement('div');
-  toastEl.id = 'app-toast';
-  toastEl.className = 'app-toast';
-  toastEl.setAttribute('role', 'status');
-  toastEl.setAttribute('aria-live', 'polite');
-  toastEl.hidden = true;
-  document.body.appendChild(toastEl);
-  return toastEl;
-}
-
-function showToast(text, durationMs = 2800){
-  const toastEl = getToastEl();
-  toastEl.textContent = text;
-  toastEl.hidden = false;
-  requestAnimationFrame(() => {
-    toastEl.classList.add('show');
-  });
-  if(toastHideTimer){
-    clearTimeout(toastHideTimer);
-  }
-  toastHideTimer = setTimeout(() => {
-    toastEl.classList.remove('show');
-    setTimeout(() => {
-      if(!toastEl.classList.contains('show')){
-        toastEl.hidden = true;
-      }
-    }, 180);
-  }, durationMs);
-}
-
 async function loadBoard(){
   const res = await fetch('./images/dartboard.svg');
   const svg = await res.text();
@@ -803,7 +812,7 @@ function showSetupScreen(){
 }
 
 function hideSetupScreen(){
-  header.hidden = false;
+  header.hidden = true;
   setupScreen.hidden = true;
   gameScreen.hidden = false;
 }
@@ -1151,7 +1160,7 @@ async function confirmPendingThrow(){
     });
 
     if(result.turnResetReason === 'double-out-required'){
-      showToast(result.message || 'Double out required. Score stays the same.');
+      showMessage(result.message || 'Double out required. Score stays the same.', 'Double Out Required', 'info');
     }
 
     appendLog(`${activePlayer.name} hit ${hit.target} ${hit.ring} for ${hit.score}. ${result.message || ''}`.trim());
@@ -1199,13 +1208,11 @@ function updateHistoryViewToggle(showingHistory){
 }
 
 async function startGame(){
-  const selectedExistingUsersList = getSelectedExistingUsers();
-  const newUsers = parsePlayerNames(playersInput.value);
-  const players = [...selectedExistingUsersList, ...newUsers];
+  const players = [...gamePlayers];
 
   const duplicates = findDuplicatePlayerNames(players);
   if(duplicates.length > 0){
-    showMessage(`Player names must be unique. Duplicate name(s): ${duplicates.join(', ')}`, 'Duplicate Players', 'warning');
+    showMessage(`Player names must be unique. Duplicate name(s): ${duplicates.join(', ')}`, 'Duplicate Players', 'error');
     return;
   }
 
@@ -1216,8 +1223,9 @@ async function startGame(){
 
   const mergedKnownUsers = uniquePlayerNames([...knownUsers, ...players]);
   await saveKnownUsers(mergedKnownUsers);
-  renderKnownUsers(selectedExistingUsers);
-  playersInput.value = '';
+  renderKnownUsers([]);
+  // Do not clear gamePlayers here so players persist for next game
+  renderAddedPlayersTable();
 
   const definition = GAME_REGISTRY[gameSelect.value];
   completedGameView = null;
@@ -1404,9 +1412,133 @@ async function handleNewGameRequest(){
   updateHUD('Setup a new game to begin.');
   showSetupScreen();
   await refreshResumeList();
+  // Do not clear gamePlayers here so players persist for next game
 }
 
 startBtn.addEventListener('click', startGame);
+if (openAddPlayersModalBtn && addPlayersModalEl) {
+  openAddPlayersModalBtn.addEventListener('click', () => {
+    addPlayersModalEl.hidden = false;
+    document.body.style.overflow = 'hidden';
+  });
+}
+
+if (addPlayersCancelBtn && addPlayersModalEl) {
+  addPlayersCancelBtn.addEventListener('click', () => {
+    addPlayersModalEl.hidden = true;
+    document.body.style.overflow = '';
+  });
+}
+
+// Prevent closing Add Players modal by pressing Escape
+if (addPlayersModalEl) {
+  addPlayersModalEl.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+  });
+}
+
+// --- Add Players Modal: Individual Entry Logic ---
+const playerNameInput = document.getElementById('player-name-input');
+const addPlayerBtn = document.getElementById('add-player-btn');
+const modalAddedPlayersTable = document.getElementById('modal-added-players-table');
+const modalAddedPlayersTbody = modalAddedPlayersTable ? modalAddedPlayersTable.querySelector('tbody') : null;
+let modalAddedPlayers = [];
+
+function renderModalAddedPlayers() {
+  if (!modalAddedPlayersTbody) return;
+  modalAddedPlayersTbody.innerHTML = '';
+  modalAddedPlayers.forEach((name, idx) => {
+    const tr = document.createElement('tr');
+    const tdName = document.createElement('td');
+    tdName.textContent = name;
+    const tdRemove = document.createElement('td');
+    tdRemove.className = 'text-end';
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn btn-sm btn-outline-danger';
+    removeBtn.textContent = 'Remove';
+    removeBtn.type = 'button';
+    removeBtn.addEventListener('click', () => {
+      modalAddedPlayers.splice(idx, 1);
+      renderModalAddedPlayers();
+    });
+    tdRemove.appendChild(removeBtn);
+    tr.appendChild(tdName);
+    tr.appendChild(tdRemove);
+    modalAddedPlayersTbody.appendChild(tr);
+  });
+}
+
+if (addPlayerBtn && playerNameInput) {
+  addPlayerBtn.addEventListener('click', () => {
+    const name = normalizePlayerName(playerNameInput.value);
+    if (!name) return;
+    const nameKey = playerNameKey(name);
+    const existsInModal = modalAddedPlayers.some(n => playerNameKey(n) === nameKey);
+    const existsInGame = gamePlayers.some(n => playerNameKey(n) === nameKey);
+    const existsInKnown = knownUsers.some(n => playerNameKey(n) === nameKey);
+    if (existsInModal || existsInGame || existsInKnown) {
+      showMessage(`Player "${name}" is already added or exists as a known user.`, 'Duplicate Player', 'error');
+      playerNameInput.focus();
+      return;
+    }
+    modalAddedPlayers.push(name);
+    renderModalAddedPlayers();
+    playerNameInput.value = '';
+    playerNameInput.focus();
+  });
+  playerNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      addPlayerBtn.click();
+    }
+  });
+}
+
+if (openAddPlayersModalBtn && addPlayersModalEl) {
+  openAddPlayersModalBtn.addEventListener('click', () => {
+    addPlayersModalEl.hidden = false;
+    modalAddedPlayers = [];
+    renderModalAddedPlayers();
+    if (playerNameInput) playerNameInput.value = '';
+    if (playerNameInput) playerNameInput.focus();
+    document.body.style.overflow = 'hidden';
+  });
+}
+
+if (addPlayersCancelBtn && addPlayersModalEl) {
+  addPlayersCancelBtn.addEventListener('click', () => {
+    addPlayersModalEl.hidden = true;
+    modalAddedPlayers = [];
+    renderModalAddedPlayers();
+    if (playerNameInput) playerNameInput.value = '';
+    document.body.style.overflow = '';
+  });
+}
+
+if (addPlayersConfirmBtn && addPlayersModalEl) {
+  addPlayersConfirmBtn.addEventListener('click', () => {
+    // Add modalAddedPlayers to the shared gamePlayers list
+    if (modalAddedPlayers.length === 0) return;
+    const allPlayers = [...gamePlayers, ...modalAddedPlayers];
+    const duplicates = findDuplicatePlayerNames(allPlayers);
+    if (duplicates.length > 0) {
+      showMessage(`Player names must be unique. Duplicate name(s): ${duplicates.join(', ')}`, 'Duplicate Players', 'info');
+      return;
+    }
+    gamePlayers = uniquePlayerNames([...gamePlayers, ...modalAddedPlayers]);
+    renderAddedPlayersTable();
+    addPlayersModalEl.hidden = true;
+    modalAddedPlayers = [];
+    renderModalAddedPlayers();
+    if (playerNameInput) playerNameInput.value = '';
+    document.body.style.overflow = '';
+  });
+}
+
+// Render table on load
+renderAddedPlayersTable();
 gameSelect.addEventListener('change', updateGameOptionsVisibility);
 newGameBtn.addEventListener('click', handleNewGameRequest);
 restartGameBtn.addEventListener('click', restartGame);

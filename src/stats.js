@@ -51,7 +51,7 @@ export function formatSummaryHtml(summary){
       if(gameEntries.length === 0){
         return [`
           <tr class="player-group-end">
-            <td class="player-group-cell">${playerName}</td>
+            <td>${playerName}</td>
             <td>—</td>
             <td>0</td>
             <td>0</td>
@@ -63,7 +63,7 @@ export function formatSummaryHtml(summary){
         const isStartOfGroup = index === 0;
         const isEndOfGroup = index === gameEntries.length - 1;
         const playerCell = index === 0
-          ? `<td class="player-group-cell" rowspan="${gameEntries.length}">${playerName}</td>`
+          ? `<td rowspan="${gameEntries.length}">${playerName}</td>`
           : '';
         return `
           <tr class="${isStartOfGroup ? 'player-group-start' : ''} ${isEndOfGroup ? 'player-group-end' : ''}">

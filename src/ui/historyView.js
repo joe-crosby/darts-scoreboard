@@ -302,7 +302,7 @@ export function renderHistoryDetailHtml(record){
       <div class="mb-3"><strong>${escapeHtml(winnerLabel)}</strong>${winnerFlair}</div>
       <h3 class="h6">Performance Snapshot</h3>
       <div class="table-responsive mb-3">
-        <table class="table table-sm table-striped">
+        <table class="table table-sm">
           <thead>
             <tr><th>Player</th><th>Score</th><th>1st 3 %</th><th>1st 9 %</th><th>Best Round</th><th>D</th><th>T</th><th>Bull</th></tr>
           </thead>
@@ -322,7 +322,7 @@ export function renderHistoryDetailHtml(record){
         <h3 class="h6">Tie-Breaker Data</h3>
         <div class="text-muted small mb-2">${escapeHtml(tieBreakerReasonLabel)} • Start Target ${Number(tieBreakerSummary.startingTarget || 0)} • Winner ${escapeHtml(tieBreakerSummary.winner || record.winner || 'N/A')}</div>
         <div class="table-responsive mb-3">
-          <table class="table table-sm table-striped">
+          <table class="table table-sm">
             <thead>
               <tr><th>TB Round</th><th>Target</th><th>Leaders</th><th>High Score</th><th>Per-Player Score</th></tr>
             </thead>

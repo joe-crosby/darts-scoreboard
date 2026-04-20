@@ -30,6 +30,7 @@ function renderBoardLayout({
   const right = pad(rightPlayers);
   const tableClass = compactRows ? 'dart-board-table compact-rows' : 'dart-board-table';
   let html = `<div class="dart-board"><table class="${tableClass}">`;
+  let columnSpacer = '<th class="board-player-col"></th>';
 
   html += '<thead><tr>';
   left.forEach((player) => {
@@ -37,7 +38,7 @@ function renderBoardLayout({
       const activeClass = !isCompleted && player.id === currentPlayerIndex ? ' active-player-header' : '';
       html += `<th class="board-player-col${activeClass}">${player.name}</th>`;
     } else {
-      html += '<th class="board-player-col board-spacer-col"></th>';
+      html += columnSpacer;
     }
   });
   html += `<th class="board-center-col">${centerHeader}</th>`;
@@ -46,7 +47,7 @@ function renderBoardLayout({
       const activeClass = !isCompleted && player.id === currentPlayerIndex ? ' active-player-header' : '';
       html += `<th class="board-player-col${activeClass}">${player.name}</th>`;
     } else {
-      html += '<th class="board-player-col board-spacer-col"></th>';
+      html += columnSpacer;
     }
   });
   html += '</tr></thead><tbody>';
@@ -55,7 +56,7 @@ function renderBoardLayout({
     html += '<tr>';
     left.forEach((player) => {
       if(!player){
-        html += '<td class="board-player-cell board-spacer-col"></td>';
+        html += columnSpacer;
         return;
       }
       const activeClass = !isCompleted && player.id === currentPlayerIndex ? ' active-player-cell' : '';
@@ -65,7 +66,7 @@ function renderBoardLayout({
     html += `<td class="board-center-col board-row-label">${rowLabel}</td>`;
     right.forEach((player) => {
       if(!player){
-        html += '<td class="board-player-cell board-spacer-col"></td>';
+        html += columnSpacer;
         return;
       }
       const activeClass = !isCompleted && player.id === currentPlayerIndex ? ' active-player-cell' : '';
@@ -80,13 +81,13 @@ function renderBoardLayout({
     left.forEach((player) => {
       html += player
         ? `<td class="board-footer-cell">${footerFor(player)}</td>`
-        : '<td class="board-footer-cell board-spacer-col"></td>';
+        : '<td class="board-footer-cell"></td>';
     });
     html += `<td class="board-center-col board-footer-label">${footerLabel}</td>`;
     right.forEach((player) => {
       html += player
         ? `<td class="board-footer-cell">${footerFor(player)}</td>`
-        : '<td class="board-footer-cell board-spacer-col"></td>';
+        : '<td class="board-footer-cell"></td>';
     });
     html += '</tr></tfoot>';
   }
