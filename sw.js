@@ -1,4 +1,4 @@
-const CACHE = 'darts-cache-v1.3';
+const CACHE = 'darts-cache-v1.4';
 const ASSETS = [
   '/',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS = [
   './src/ui/scoreboardView.js',
   './src/ui/historyView.js',
   './src/ui/messageModalView.js',
+  './src/ui/winnerCelebrationView.js',
   './src/games/baseGame.js',
   './src/games/standardCountDown.js',
   './src/games/cricket.js',

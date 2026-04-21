@@ -2,6 +2,7 @@ import { GAME_REGISTRY } from './gameRegistry.js';
 import { renderScoreboardHtml } from './ui/scoreboardView.js';
 import { getShanghaiFinishRound, renderHistoryDetailHtml } from './ui/historyView.js';
 import { MessageModalController, initializeMessageModal, showMessage, showConfirm, showPrompt, closeMessage } from './ui/messageModalView.js';
+import { createWinnerCelebrationModal } from './ui/winnerCelebrationView.js';
 import { escapeHtml } from './utils.js';
 import * as storage from './storage.js';
 import { formatSummaryHtml, summarizeHistory } from './stats.js';
@@ -1049,6 +1050,12 @@ async function finalizeGame(result){
   await storage.deleteGameSnapshot(session.id);
   historyCache = await storage.listHistory();
   await refreshResumeList();
+  // Show winner celebration modal only for single winner
+  if (winners.length === 1 && winners[0]) {
+    createWinnerCelebrationModal({
+      winnerName: winners[0]
+    });
+  }
   session = null;
   game = null;
   closeScoringOverlay();
@@ -1061,6 +1068,7 @@ function addThrowStats(player, hit){
     player.stats = {throws: 0, doubles: 0, triples: 0, bulls: 0, totalScored: 0};
   }
   player.stats.throws += 1;
+  // Joe testing - totalScored should only be updated for games that keep score
   player.stats.totalScored += hit.score;
   if(hit.multiplier === 2){
     player.stats.doubles += 1;

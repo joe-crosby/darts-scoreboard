@@ -656,7 +656,7 @@ main {
 }
 
 /* ── History modal ─────────────────────────────────────── */
-.modal {
+.my-modal {
   position: fixed;
   inset: 0;
   transform: none;
@@ -673,7 +673,7 @@ main {
   box-shadow: 0 18px 44px rgba(20, 46, 73, 0.26);
 }
 
-.modal .card-body {
+.my-modal .card-body {
   width: min(1100px, 96vw);
   max-height: none;
   overflow: visible;
@@ -855,18 +855,18 @@ main {
 }
 
 :root[data-theme='midnight-neon'] .card,
-:root[data-theme='midnight-neon'] .modal .card-body {
+:root[data-theme='midnight-neon'] .my-modal .card-body {
   background: #171d24;
   border-color: #384555;
   color: var(--bs-body-color);
 }
 
-:root[data-theme='midnight-neon'] .table,
+/* joe testing :root[data-theme='midnight-neon'] .table,
 :root[data-theme='midnight-neon'] .table th,
 :root[data-theme='midnight-neon'] .table td,
 :root[data-theme='midnight-neon'] .h6 {
   color: var(--bs-body-color);
-}
+} */
 
 :root[data-theme='midnight-neon'] .existing-users-list,
 :root[data-theme='midnight-neon'] .history-controls,
@@ -935,14 +935,14 @@ main {
   background: rgba(3, 9, 16, 0.72);
 }
 
-:root[data-theme='midnight-neon'] .table tbody td,
+:root[data-theme='midnight-neon'] .table td,
 :root[data-theme='midnight-neon'] .table {
   background: #1a212b;
   color: #e7edf3;
   border-bottom: 2px solid #335f93;
 }
 
-:root[data-theme='midnight-neon'] .table thead th {
+:root[data-theme='midnight-neon'] .table th {
   background: #25313d;
   color: #e7edf3;
   border-bottom-color: #445365;
