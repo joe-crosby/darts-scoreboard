@@ -1342,6 +1342,139 @@ function renderHistoryList(){
   const summary = summarizeHistory(filteredHistory);
   historyStatsEl.innerHTML = formatSummaryHtml(summary);
 
+  // Add click handler to stats table rows for filtering by game type AND players in the clicked row
+  const statsTable = historyStatsEl.querySelector('table');
+  if (statsTable) {
+    statsTable.querySelectorAll('tbody tr').forEach(row => {
+      row.style.cursor = 'pointer';
+      row.addEventListener('click', () => {
+        // Robustly extract player name from rowspan-based grouped table
+        let playerName = null;
+        let gameType = null;
+        // If this row has a <td> with rowspan, that's the player name
+        const playerCell = row.querySelector('td[rowspan]');
+        if (playerCell) {
+          playerName = playerCell.textContent.trim();
+        } else {
+          // Otherwise, find the closest previous sibling row with a player name cell
+          let prev = row.previousElementSibling;
+          while (prev) {
+            const prevPlayerCell = prev.querySelector('td[rowspan]');
+            if (prevPlayerCell) {
+              playerName = prevPlayerCell.textContent.trim();
+              break;
+            }
+            prev = prev.previousElementSibling;
+          }
+        }
+        // Game type is always the second cell (first if no player cell)
+        const cells = row.querySelectorAll('td');
+        let gameCellIdx = playerCell ? 1 : 0;
+        if (cells.length > gameCellIdx) {
+          let rawGame = cells[gameCellIdx].textContent.trim();
+          // Try to match to a known game key
+          let foundKey = null;
+          for (const key in GAME_REGISTRY) {
+            const label = GAME_REGISTRY[key].label;
+            if (rawGame === key || rawGame.startsWith(key + ' ') || rawGame === label || rawGame.startsWith(label + ' ')) {
+              foundKey = key;
+              break;
+            }
+          }
+          gameType = foundKey || rawGame.split(' ')[0];
+        }
+        if (playerName && gameType) {
+          historyPlayerFilterInput.value = '';
+          historyViewMode = 'history';
+          updateHistoryViewToggle(true);
+          historyStatsEl.hidden = true;
+          historyList.hidden = false;
+          historyDetail.hidden = false;
+          renderHistoryListFilteredByGameTypeAndPlayers(gameType, [playerName]);
+          const first = historyList.querySelector('.history-entry');
+          if (first) first.scrollIntoView({behavior: 'smooth', block: 'center'});
+        }
+      });
+    });
+  }
+
+  // Helper: render history filtered by game type AND players
+  function renderHistoryListFilteredByGameTypeAndPlayers(gameType, playerNames) {
+    // Normalize player names for robust comparison
+    const normalizedClickedNames = playerNames.map(n => playerNameKey(n));
+    const filteredHistory = historyCache.filter(record => {
+      const recordGameType = record.game || record.gameKey;
+      const recordGameLabel = record.gameLabel || (GAME_REGISTRY[recordGameType]?.label) || '';
+      // Match by key or label
+      if (recordGameType !== gameType && recordGameLabel !== gameType) return false;
+      // Support both string and object player entries, normalize all
+      const recordPlayers = (record.players || []).map(p => playerNameKey(typeof p === 'string' ? p : (p && p.name ? p.name : ''))).filter(Boolean);
+      return normalizedClickedNames.some(nameKey => recordPlayers.includes(nameKey));
+    });
+    historyList.innerHTML = '';
+    historyDetail.innerHTML = '';
+    if(filteredHistory.length === 0){
+      historyList.innerHTML = '<li class="list-group-item"><span class="text-muted">No finished games yet.</span></li>';
+      return;
+    }
+    const sorted = [...filteredHistory].sort((left, right) => right.finishedAt - left.finishedAt);
+    for(const record of sorted){
+      const item = document.createElement('li');
+      item.className = 'list-group-item history-entry';
+      const row = document.createElement('div');
+      row.className = 'd-flex justify-content-between align-items-start gap-3';
+      const label = document.createElement('div');
+      const players = (record.players || []).map((player) => player.name).join(', ');
+      const shanghaiFinishRound = getShanghaiFinishRound(record);
+      const winnerLabel = record.winners?.length > 1
+        ? `Winners: ${record.winners.join(', ')}`
+        : `Winner: ${record.winner}`;
+      const winnerFlair = shanghaiFinishRound
+        ? ` <span class="shanghai-finish-badge">SHANGHAI FINISH • ${shanghaiFinishRound}</span>`
+        : '';
+      label.innerHTML = `
+        <div><strong>${escapeHtml(record.gameLabel || record.game)}</strong> • ${new Date(record.finishedAt).toLocaleString()}</div>
+        <div class="text-muted small">${escapeHtml(winnerLabel)}${winnerFlair} • Players: ${escapeHtml(players)}</div>
+      `;
+      // View button
+      const viewBtn = document.createElement('button');
+      viewBtn.className = 'btn btn-outline-secondary btn-sm flex-shrink-0';
+      viewBtn.textContent = 'View';
+      viewBtn.setAttribute('aria-expanded', 'false');
+      // Delete button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'btn btn-outline-danger btn-sm flex-shrink-0 ms-2';
+      deleteBtn.textContent = 'Delete';
+      const inlineDetail = document.createElement('div');
+      inlineDetail.className = 'history-inline-detail';
+      inlineDetail.hidden = true;
+      viewBtn.addEventListener('click', () => {
+        const isOpen = !inlineDetail.hidden;
+        inlineDetail.hidden = isOpen;
+        viewBtn.textContent = isOpen ? 'View' : 'Hide';
+        viewBtn.setAttribute('aria-expanded', String(!isOpen));
+        if(!isOpen && !inlineDetail.dataset.rendered){
+          inlineDetail.innerHTML = renderHistoryDetailHtml(record);
+          inlineDetail.dataset.rendered = '1';
+        }
+      });
+      deleteBtn.addEventListener('click', async () => {
+        const confirmed = await showConfirm('Delete this history item? This cannot be undone.', 'Delete History');
+        if (!confirmed) return;
+        await storage.deleteHistory(record.id);
+        // Remove from cache and re-render
+        historyCache = historyCache.filter(r => r.id !== record.id);
+        renderHistoryListFilteredByGameTypeAndPlayers(gameType, playerNames);
+      });
+      const btnGroup = document.createElement('div');
+      btnGroup.className = 'd-flex gap-2';
+      btnGroup.append(viewBtn, deleteBtn);
+      row.append(label, btnGroup);
+      item.append(row, inlineDetail);
+      historyList.appendChild(item);
+    }
+  }
+
   const showingHistory = historyViewMode === 'history';
   updateHistoryViewToggle(showingHistory);
 
