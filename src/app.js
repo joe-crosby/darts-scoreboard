@@ -67,7 +67,6 @@ const historyList = document.getElementById('history-list');
 const historyDetail = document.getElementById('history-detail');
 const closeHistory = document.getElementById('close-history');
 const messageModal = document.getElementById('message-modal');
-const messageBackdrop = document.getElementById('message-backdrop');
 const messagePanel = document.getElementById('message-panel');
 const messageBadge = document.getElementById('message-badge');
 const messageTitleEl = document.getElementById('message-title');
@@ -1665,7 +1664,6 @@ messageYesBtn.addEventListener('click', () => {
 messageNoBtn.addEventListener('click', () => {
   messageModalController.close(false);
 });
-messageBackdrop.addEventListener('click', closeMessage);
 document.addEventListener('keydown', (event) => {
   if(event.key === 'Escape' && !scoringOverlayEl.hidden){
     closeScoringOverlay();
