@@ -861,13 +861,6 @@ main {
   color: var(--bs-body-color);
 }
 
-/* joe testing :root[data-theme='midnight-neon'] .table,
-:root[data-theme='midnight-neon'] .table th,
-:root[data-theme='midnight-neon'] .table td,
-:root[data-theme='midnight-neon'] .h6 {
-  color: var(--bs-body-color);
-} */
-
 :root[data-theme='midnight-neon'] .existing-users-list,
 :root[data-theme='midnight-neon'] .history-controls,
 :root[data-theme='midnight-neon'] .history-entry,

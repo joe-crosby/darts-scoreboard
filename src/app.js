@@ -475,14 +475,7 @@ function applyExistingUsersSelection(){
   if(!existingUsersPickerListEl){
     return;
   }
-  // Joe testing - this is crap
-  // const checked = getCheckedExistingUsersInModal();
-  // if(checked.length === 0){
-  //   updateExistingUsersSelectionButtons();
-  //   return;
-  // }
-  // // Track the order of selection: update selectedExistingUsers to match checked order
-  // selectedExistingUsers = checked;
+
   // Add checked users to gamePlayers in the order selected, avoiding duplicates
   gamePlayers = uniquePlayerNames([...gamePlayers, ...selectedExistingUsers]);
   updateSelectedExistingUsersSummary();
@@ -1646,12 +1639,12 @@ existingUsersPickerListEl?.addEventListener('click', async (event) => {
   if(existingUsersModalMode === 'add'){    
     const row = event.target.closest('.existing-user-row');
     if(row){
-      // Joe testing
+
       let value = row.textContent;
       const checkbox = row.querySelector('input[type="checkbox"]');
       if(checkbox){
         checkbox.checked = !checkbox.checked;
-        // joe testing 
+
         if (checkbox.checked) {
           selectedExistingUsers.push(value);
         }
