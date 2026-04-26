@@ -130,9 +130,8 @@
                 <div class="card-body">
                   <h3 class="card-title h6 mb-3">Players</h3>
                   <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-                    <button id="open-add-players-modal" type="button" class="btn btn-primary">Add New Players</button>
                     <button id="clear-added-users" type="button" class="btn btn-outline-secondary">Clear Players</button>
-                    <button id="pick-existing-users" type="button" class="btn btn-outline-primary">View Existing Users</button>
+                    <button id="pick-existing-users" type="button" class="btn btn-outline-primary">View Existing</button>
                   </div>
                   <div class="mt-2 ms-1">
                     <div class="fw-semibold text-muted mb-1" style="white-space:nowrap;">Game Players:</div>
@@ -222,37 +221,21 @@
     </section>
 
     <!-- Add Players Modal (individual entry) -->
-    <section id="add-players-modal" class="my-modal card" hidden>
-      <div class="card-body">
-        <h2 class="card-title h5">Add Players</h2>
-        <label class="form-label fw-semibold" for="player-name-input">Player Name</label>
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <input id="player-name-input" class="form-control" placeholder="Enter player name" autocomplete="off" />
-          <button id="add-player-btn" class="btn btn-outline-primary" type="button">Add</button>
-        </div>
-        <table id="modal-added-players-table" class="table table-sm mb-2">
-          <thead>
-            <tr><th>Player Name</th><th style="width: 1px;"></th></tr>
-          </thead>
-          <tbody>
-            <!-- Player rows will be dynamically inserted here -->
-          </tbody>
-        </table>
-        <div class="d-flex justify-content-end gap-2 mt-3">
-          <button id="add-players-confirm" class="btn btn-primary">Accept</button>
-          <button id="add-players-cancel" class="btn btn-secondary">Close</button>
-        </div>
-      </div>
-    </section>
+
 
     <!-- Existing users picker modal -->
     <section id="existing-users-modal" class="my-modal card" hidden>
       <div class="card-body">
-        <h2 class="card-title h5">View Existing Users</h2>
-        <div class="small text-muted mb-2">Switch between adding users to the game or managing saved users.</div>
+        <h2 class="card-title h5">Existing Players</h2>
         <div class="btn-group btn-group-sm mb-2 toggle-button-group" role="group" aria-label="Existing users mode">
           <button id="existing-users-mode-add" type="button" class="btn btn-primary" aria-pressed="true">Add To Game</button>
           <button id="existing-users-mode-manage" type="button" class="btn btn-outline-primary" aria-pressed="false">Manage Users</button>
+        </div>
+        <div class="mb-2 d-flex align-items-center gap-2">
+          <div id="existing-user-add-row" class="my-3 w-100 d-flex justify-content-center">
+            <input type="text" class="form-control me-2" id="existing-user-new-name" placeholder="Add new player..." autocomplete="off">
+            <button type="button" class="btn btn-primary" id="existing-user-add-btn">Add</button>
+          </div>
         </div>
         <div id="existing-users-picker-empty" class="small text-muted mb-2">No existing users yet. Start a game with new names to save them.</div>
         <ul id="existing-users-picker-list" class="existing-users-list mb-3" aria-label="Existing users picker"></ul>

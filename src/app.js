@@ -1,3 +1,41 @@
+
+function updateExistingUserAddRowVisibility() {
+  const row = document.getElementById('existing-user-add-row');
+  if (!row) return;
+  row.classList.toggle('d-none', existingUsersModalMode !== 'add');
+}
+
+// --- Add new player directly in existing users modal ---
+const existingUserNewNameInput = document.getElementById('existing-user-new-name');
+const existingUserAddBtn = document.getElementById('existing-user-add-btn');
+
+if (existingUserAddBtn && existingUserNewNameInput) {
+  existingUserAddBtn.addEventListener('click', async () => {
+    const name = normalizePlayerName(existingUserNewNameInput.value);
+    if (!name) {
+      showMessage('Name cannot be empty.', 'Invalid Name', 'error');
+      existingUserNewNameInput.focus();
+      return;
+    }
+    const nameKey = playerNameKey(name);
+    const exists = knownUsers.some(n => playerNameKey(n) === nameKey);
+    if (exists) {
+      showMessage(`Player "${name}" already exists.`, 'Duplicate Player', 'error');
+      existingUserNewNameInput.focus();
+      return;
+    }
+    knownUsers.push(name);
+    await saveKnownUsers(knownUsers);
+    renderKnownUsers();
+    existingUserNewNameInput.value = '';
+    existingUserNewNameInput.focus();
+  });
+  existingUserNewNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      existingUserAddBtn.click();
+    }
+  });
+}
 import { GAME_REGISTRY } from './gameRegistry.js';
 import { renderScoreboardHtml } from './ui/scoreboardView.js';
 import { getShanghaiFinishRound, renderHistoryDetailHtml } from './ui/historyView.js';
@@ -99,6 +137,7 @@ let snapshotCache = [];
 let sessionWasResumed = false;
 let knownUsers = [];
 let gamePlayers = [];
+// Tracks the users currently selected in the existing users modal (in selection order)
 let selectedExistingUsers = [];
 let existingUsersModalMode = 'add';
 let toastHideTimer = null;
@@ -269,7 +308,7 @@ function renderAddedPlayersTable() {
 function clearAddedExistingUsers(){
   gamePlayers = [];
   updateSelectedExistingUsersSummary();
-  renderKnownUsers([]);
+  renderKnownUsers();
   renderAddedPlayersTable();
 }
 
@@ -297,18 +336,23 @@ function updateExistingUsersModalControls(){
 function setExistingUsersModalMode(mode){
   existingUsersModalMode = mode === 'manage' ? 'manage' : 'add';
   updateExistingUsersModalControls();
-  renderKnownUsers(selectedExistingUsers);
+  renderKnownUsers();
   updateExistingUsersSelectionButtons();
+  updateExistingUserAddRowVisibility();
 }
 
-function renderKnownUsers(selected = []){
+function renderKnownUsers(){
   if(!existingUsersPickerListEl || !existingUsersPickerEmptyEl || !pickExistingUsersBtn){
     return;
   }
-  const selectedKeys = new Set(uniquePlayerNames(selected).map((name) => playerNameKey(name)));
+  // Always use empty selection for checkboxes
+  const selectedKeys = new Set();
   existingUsersPickerListEl.innerHTML = '';
 
-  if(knownUsers.length === 0){
+  // Sort knownUsers alphabetically (case-insensitive)
+  const sortedKnownUsers = [...knownUsers].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+
+  if(sortedKnownUsers.length === 0){
     existingUsersPickerListEl.hidden = true;
     existingUsersPickerEmptyEl.hidden = false;
     pickExistingUsersBtn.disabled = true;
@@ -322,7 +366,7 @@ function renderKnownUsers(selected = []){
   existingUsersPickerEmptyEl.hidden = true;
   pickExistingUsersBtn.disabled = false;
 
-  knownUsers.forEach((userName, index) => {
+  sortedKnownUsers.forEach((userName, index) => {
     const wrapper = document.createElement('li');
     wrapper.className = 'existing-user-row';
 
@@ -375,7 +419,7 @@ function renderKnownUsers(selected = []){
     existingUsersPickerListEl.appendChild(wrapper);
   });
 
-  selectedExistingUsers = knownUsers.filter((userName) => selectedKeys.has(playerNameKey(userName)));
+  // Do not update selectedExistingUsers here; only update summary/buttons
   updateSelectedExistingUsersSummary();
   updateExistingUsersSelectionButtons();
 }
@@ -385,7 +429,9 @@ function openExistingUsersModal(){
     return;
   }
   setExistingUsersModalMode('add');
-  renderKnownUsers(selectedExistingUsers);
+  // Always open with no users selected
+  selectedExistingUsers = [];
+  renderKnownUsers();
   existingUsersModalEl.hidden = false;
 }
 
@@ -429,13 +475,16 @@ function applyExistingUsersSelection(){
   if(!existingUsersPickerListEl){
     return;
   }
-  const checked = getCheckedExistingUsersInModal();
-  if(checked.length === 0){
-    updateExistingUsersSelectionButtons();
-    return;
-  }
-  // Add checked users to gamePlayers, avoiding duplicates
-  gamePlayers = uniquePlayerNames([...gamePlayers, ...checked]);
+  // Joe testing - this is crap
+  // const checked = getCheckedExistingUsersInModal();
+  // if(checked.length === 0){
+  //   updateExistingUsersSelectionButtons();
+  //   return;
+  // }
+  // // Track the order of selection: update selectedExistingUsers to match checked order
+  // selectedExistingUsers = checked;
+  // Add checked users to gamePlayers in the order selected, avoiding duplicates
+  gamePlayers = uniquePlayerNames([...gamePlayers, ...selectedExistingUsers]);
   updateSelectedExistingUsersSummary();
   closeExistingUsersModal();
   renderAddedPlayersTable();
@@ -447,6 +496,7 @@ function clearExistingUsersSelection(){
       checkbox.checked = false;
     });
   }
+  selectedExistingUsers = [];
   updateExistingUsersSelectionButtons();
 }
 
@@ -468,7 +518,7 @@ async function deleteExistingUser(userName){
   knownUsers = knownUsers.filter((name) => playerNameKey(name) !== playerNameKey(normalizedName));
   selectedExistingUsers = selectedExistingUsers.filter((name) => playerNameKey(name) !== playerNameKey(normalizedName));
   await saveKnownUsers(knownUsers);
-  renderKnownUsers(selectedExistingUsers);
+  renderKnownUsers();
 
 
   // Remove user from all history records' players arrays
@@ -529,7 +579,7 @@ async function renameExistingUser(userName){
     playerNameKey(name) === playerNameKey(previousName) ? nextName : name
   ));
   await saveKnownUsers(knownUsers);
-  renderKnownUsers(selectedExistingUsers);
+  renderKnownUsers();
 }
 
 function getCricketModeSelection(){
@@ -1230,7 +1280,7 @@ async function startGame(){
 
   const mergedKnownUsers = uniquePlayerNames([...knownUsers, ...players]);
   await saveKnownUsers(mergedKnownUsers);
-  renderKnownUsers([]);
+  renderKnownUsers();
   // Do not clear gamePlayers here so players persist for next game
   renderAddedPlayersTable();
 
@@ -1591,17 +1641,26 @@ existingUsersModalEl?.addEventListener('click', (event) => {
     closeExistingUsersModal();
   }
 });
+
 existingUsersPickerListEl?.addEventListener('click', async (event) => {
-  if(existingUsersModalMode === 'add'){
+  if(existingUsersModalMode === 'add'){    
     const row = event.target.closest('.existing-user-row');
     if(row){
-      const clickedControl = event.target.closest('input, label, button, a, select, textarea');
-      if(!clickedControl){
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        if(checkbox){
-          checkbox.checked = !checkbox.checked;
-          updateExistingUsersSelectionButtons();
+      // Joe testing
+      let value = row.textContent;
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      if(checkbox){
+        checkbox.checked = !checkbox.checked;
+        // joe testing 
+        if (checkbox.checked) {
+          selectedExistingUsers.push(value);
         }
+        else {
+          if (selectedExistingUsers.includes(value)) {  
+            selectedExistingUsers.remove(value);
+          }
+        }
+        updateExistingUsersSelectionButtons();
       }
     }
   }
