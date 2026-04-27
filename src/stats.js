@@ -43,48 +43,50 @@ export function formatSummaryHtml(summary){
   const playerEntries = Object.entries(summary.players)
     .sort((left, right) => left[0].localeCompare(right[0], undefined, { sensitivity: 'base' }));
 
-  const rows = playerEntries
-    .flatMap(([playerName, playerStats]) => {
-      const gameEntries = Object.entries(playerStats.byGameType)
-        .sort((left, right) => left[0].localeCompare(right[0], undefined, { sensitivity: 'base' }));
+  const template = document.getElementById('game-stats-summary-template');
+  if (!template) return '';
+  const node = template.content.firstElementChild.cloneNode(true);
+  const tbody = node.querySelector('.game-stats-summary-rows');
 
-      if(gameEntries.length === 0){
-        return [`
-          <tr class="player-group-end">
-            <td>${playerName}</td>
-            <td>—</td>
-            <td>0</td>
-            <td>0</td>
-          </tr>
-        `];
+  let hasRows = false;
+  playerEntries.forEach(([playerName, playerStats]) => {
+    const gameEntries = Object.entries(playerStats.byGameType)
+      .sort((left, right) => left[0].localeCompare(right[0], undefined, { sensitivity: 'base' }));
+
+    if(gameEntries.length === 0){
+      const tr = document.createElement('tr');
+      tr.className = 'player-group-end';
+      tr.innerHTML = `<td>${playerName}</td><td>—</td><td>0</td><td>0</td>`;
+      tbody.appendChild(tr);
+      hasRows = true;
+      return;
+    }
+
+    gameEntries.forEach(([gameType, gameStats], index) => {
+      const isStartOfGroup = index === 0;
+      const isEndOfGroup = index === gameEntries.length - 1;
+      const tr = document.createElement('tr');
+      tr.className = `${isStartOfGroup ? 'player-group-start' : ''} ${isEndOfGroup ? 'player-group-end' : ''}`;
+      let playerCell = '';
+      if (index === 0) {
+        playerCell = `<td rowspan="${gameEntries.length}">${playerName}</td>`;
       }
+      tr.innerHTML = `
+        ${playerCell}
+        <td>${gameType}${gameType === 'shanghai' && gameStats.shanghaiFinishWins > 0 ? ` (${gameStats.shanghaiFinishWins} Shanghai finish${gameStats.shanghaiFinishWins === 1 ? '' : 'es'})` : ''}</td>
+        <td>${gameStats.games}</td>
+        <td>${gameStats.wins}</td>
+      `;
+      tbody.appendChild(tr);
+      hasRows = true;
+    });
+  });
 
-      return gameEntries.map(([gameType, gameStats], index) => {
-        const isStartOfGroup = index === 0;
-        const isEndOfGroup = index === gameEntries.length - 1;
-        const playerCell = index === 0
-          ? `<td rowspan="${gameEntries.length}">${playerName}</td>`
-          : '';
-        return `
-          <tr class="${isStartOfGroup ? 'player-group-start' : ''} ${isEndOfGroup ? 'player-group-end' : ''}">
-            ${playerCell}
-            <td>${gameType}${gameType === 'shanghai' && gameStats.shanghaiFinishWins > 0 ? ` (${gameStats.shanghaiFinishWins} Shanghai finish${gameStats.shanghaiFinishWins === 1 ? '' : 'es'})` : ''}</td>
-            <td>${gameStats.games}</td>
-            <td>${gameStats.wins}</td>
-          </tr>
-        `;
-      });
-    })
-    .join('');
+  if (!hasRows) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="4">No player stats yet.</td>';
+    tbody.appendChild(tr);
+  }
 
-  return `
-    <div class="table-responsive">
-      <table class="table table-sm">
-        <thead>
-          <tr><th>Player</th><th>Games</th><th># Played</th><th># Wins</th></tr>
-        </thead>
-        <tbody>${rows || '<tr><td colspan="4">No player stats yet.</td></tr>'}</tbody>
-      </table>
-    </div>
-  `;
+  return node.outerHTML;
 }

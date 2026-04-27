@@ -283,24 +283,18 @@ function renderAddedPlayersTable() {
     flexContainer.appendChild(empty);
     return;
   }
+  const template = document.getElementById('player-chip-template');
   gamePlayers.forEach((name, idx) => {
-    const chip = document.createElement('span');
-    chip.className = 'player-chip d-inline-flex align-items-center';
-    chip.textContent = name;
-
-    // Add remove button
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'btn-remove-player ms-2 p-0 lh-1';
+    if (!template) return;
+    const chip = template.content.firstElementChild.cloneNode(true);
+    chip.querySelector('.player-name').textContent = name;
+    const removeBtn = chip.querySelector('.btn-remove-player');
     removeBtn.setAttribute('aria-label', `Remove ${name}`);
-    removeBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
     removeBtn.addEventListener('click', () => {
       gamePlayers.splice(idx, 1);
       renderAddedPlayersTable();
       updateSelectedExistingUsersSummary();
     });
-    chip.appendChild(removeBtn);
-
     flexContainer.appendChild(chip);
   });
 }
@@ -612,19 +606,16 @@ function renderResumeList(){
     return;
   }
 
+  const template = document.getElementById('resume-list-entry-template');
   const sorted = [...snapshotCache].sort((left, right) => (right.startedAt || 0) - (left.startedAt || 0));
   for(const snapshot of sorted){
-    const row = document.createElement('li');
-    row.className = 'list-group-item resume-entry';
-    row.innerHTML = `
-      <div class="d-flex justify-content-between align-items-start gap-3">
-        <div class="small">${formatSnapshotLabel(snapshot)}</div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-sm btn-primary" data-action="resume" data-id="${snapshot.id}">Resume</button>
-          <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${snapshot.id}">Delete</button>
-        </div>
-      </div>
-    `;
+    if (!template) return;
+    const row = template.content.firstElementChild.cloneNode(true);
+    row.querySelector('.resume-label').textContent = formatSnapshotLabel(snapshot);
+    const resumeBtn = row.querySelector('.resume-btn');
+    const deleteBtn = row.querySelector('.delete-btn');
+    if (resumeBtn) resumeBtn.setAttribute('data-id', snapshot.id);
+    if (deleteBtn) deleteBtn.setAttribute('data-id', snapshot.id);
     resumeListEl.appendChild(row);
   }
 }
@@ -1488,13 +1479,12 @@ function renderHistoryList(){
   historyDetail.innerHTML = '';
 
   const sorted = [...filteredHistory].sort((left, right) => right.finishedAt - left.finishedAt);
+  const template = document.getElementById('history-list-entry-template');
   for(const record of sorted){
-    const item = document.createElement('li');
-    item.className = 'list-group-item history-entry';
-    const row = document.createElement('div');
-    row.className = 'd-flex justify-content-between align-items-start gap-3';
-
-    const label = document.createElement('div');
+    if (!template) continue;
+    const item = template.content.firstElementChild.cloneNode(true);
+    // Fill in label
+    const label = item.querySelector('.history-label');
     const players = (record.players || []).map((player) => player.name).join(', ');
     const shanghaiFinishRound = getShanghaiFinishRound(record);
     const winnerLabel = record.winners?.length > 1
@@ -1507,22 +1497,9 @@ function renderHistoryList(){
       <div><strong>${escapeHtml(record.gameLabel || record.game)}</strong> • ${new Date(record.finishedAt).toLocaleString()}</div>
       <div class="text-muted small">${escapeHtml(winnerLabel)}${winnerFlair} • Players: ${escapeHtml(players)}</div>
     `;
-
     // View button
-    const viewBtn = document.createElement('button');
-    viewBtn.className = 'btn btn-outline-secondary btn-sm flex-shrink-0';
-    viewBtn.textContent = 'View';
-    viewBtn.setAttribute('aria-expanded', 'false');
-
-    // Delete button
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn btn-outline-danger btn-sm flex-shrink-0 ms-2';
-    deleteBtn.textContent = 'Delete';
-
-    const inlineDetail = document.createElement('div');
-    inlineDetail.className = 'history-inline-detail';
-    inlineDetail.hidden = true;
-
+    const viewBtn = item.querySelector('.history-view-btn');
+    const inlineDetail = item.querySelector('.history-inline-detail');
     viewBtn.addEventListener('click', () => {
       const isOpen = !inlineDetail.hidden;
       inlineDetail.hidden = isOpen;
@@ -1533,7 +1510,8 @@ function renderHistoryList(){
         inlineDetail.dataset.rendered = '1';
       }
     });
-
+    // Delete button
+    const deleteBtn = item.querySelector('.history-delete-btn');
     deleteBtn.addEventListener('click', async () => {
       const confirmed = await showConfirm('Delete this history item? This cannot be undone.', 'Delete History');
       if (!confirmed) return;
@@ -1542,16 +1520,8 @@ function renderHistoryList(){
       historyCache = historyCache.filter(r => r.id !== record.id);
       renderHistoryList();
     });
-
-    const btnGroup = document.createElement('div');
-    btnGroup.className = 'd-flex gap-2';
-    btnGroup.append(viewBtn, deleteBtn);
-
-    row.append(label, btnGroup);
-    item.append(row, inlineDetail);
     historyList.appendChild(item);
   }
-
   if(sorted.length === 0){
     historyList.innerHTML = '<li class="list-group-item"><span class="text-muted">No finished games yet.</span></li>';
   }

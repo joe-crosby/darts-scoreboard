@@ -236,7 +236,6 @@ export function getShanghaiFinishRound(record){
 
 export function renderHistoryDetailHtml(record){
   const visitData = buildVisitOrder(record);
-  const playerRows = buildPlayerPerformanceRows(record, visitData);
   const stateByVisit = buildMatchStateByVisit(record, visitData.visits);
   const roundOrderVisits = visitData.visits.filter((visit) => !visit.throws.some((throwRecord) => throwRecord.isTieBreaker === true));
   const shanghaiFinishRound = getShanghaiFinishRound(record);
@@ -255,22 +254,25 @@ export function renderHistoryDetailHtml(record){
     ? `<span class="shanghai-finish-badge ms-2">SHANGHAI FINISH • ${shanghaiFinishRound}</span>`
     : '';
 
-  const tieBreakerRows = (tieBreakerSummary?.rounds || []).map((round) => {
-    const scoreLine = (round.scores || [])
-      .map((entry) => `${escapeHtml(entry.player)}: ${Number(entry.score || 0)}`)
-      .join(' | ');
-    return `
-      <tr>
-        <td>${Number(round.round || 0)}</td>
-        <td>${Number(round.target || 0)}</td>
-        <td>${escapeHtml((round.leaders || []).join(', ') || '-')}</td>
-        <td>${Number(round.highScore || 0)}</td>
-        <td>${scoreLine || '-'}</td>
-      </tr>
-    `;
-  }).join('');
+  // Get template
+  const template = document.getElementById('history-detail-template');
+  if (!template) return '';
+  const node = template.content.firstElementChild.cloneNode(true);
 
-  const visitRows = roundOrderVisits.map((visit) => {
+  // Title
+  node.querySelector('.history-detail-title').innerHTML = `<strong>${escapeHtml(record.gameLabel || record.game)}</strong>`;
+  // Meta
+  node.querySelector('.history-detail-meta').textContent = `Started ${new Date(record.startedAt).toLocaleString()} • Finished ${new Date(record.finishedAt).toLocaleString()}`;
+  // Winner
+  node.querySelector('.history-detail-winner').innerHTML = `<strong>${escapeHtml(winnerLabel)}</strong>${winnerFlair}`;
+
+  // Player performance rows
+  const playerRowsHtml = buildPlayerPerformanceRows(record, visitData);
+  const playerRowsTbody = node.querySelector('.history-detail-player-rows');
+  playerRowsTbody.innerHTML = playerRowsHtml || '<tr><td colspan="8">No player stats yet.</td></tr>';
+
+  // Visit rows
+  const visitRowsHtml = roundOrderVisits.map((visit) => {
     const matchState = getMatchStateForVisit(visit, stateByVisit);
     const formattedMatchState = (() => {
       if(typeof matchState === 'string' && matchState.endsWith(' BUST')){
@@ -294,42 +296,43 @@ export function renderHistoryDetailHtml(record){
       </tr>
     `;
   }).join('');
+  const visitRowsTbody = node.querySelector('.history-detail-visit-rows');
+  visitRowsTbody.innerHTML = visitRowsHtml || '<tr><td colspan="6">No rounds recorded.</td></tr>';
 
-  return `
-    <div class="history-detail-card card card-body mt-3">
-      <div><strong>${escapeHtml(record.gameLabel || record.game)}</strong></div>
-      <div class="text-muted small mb-2">Started ${new Date(record.startedAt).toLocaleString()} • Finished ${new Date(record.finishedAt).toLocaleString()}</div>
-      <div class="mb-3"><strong>${escapeHtml(winnerLabel)}</strong>${winnerFlair}</div>
-      <h3 class="h6">Performance Snapshot</h3>
+  // Tie-breaker section
+  const tiebreakerDiv = node.querySelector('.history-detail-tiebreaker');
+  if (tieBreakerSummary) {
+    const tieBreakerRows = (tieBreakerSummary?.rounds || []).map((round) => {
+      const scoreLine = (round.scores || [])
+        .map((entry) => `${escapeHtml(entry.player)}: ${Number(entry.score || 0)}`)
+        .join(' | ');
+      return `
+        <tr>
+          <td>${Number(round.round || 0)}</td>
+          <td>${Number(round.target || 0)}</td>
+          <td>${escapeHtml((round.leaders || []).join(', ') || '-')}</td>
+          <td>${Number(round.highScore || 0)}</td>
+          <td>${scoreLine || '-'}</td>
+        </tr>
+      `;
+    }).join('');
+    tiebreakerDiv.innerHTML = `
+      <h3 class="h6">Tie-Breaker Data</h3>
+      <div class="text-muted small mb-2">${escapeHtml(tieBreakerReasonLabel)} • Start Target ${Number(tieBreakerSummary.startingTarget || 0)} • Winner ${escapeHtml(tieBreakerSummary.winner || record.winner || 'N/A')}</div>
       <div class="table-responsive mb-3">
         <table class="table table-sm">
           <thead>
-            <tr><th>Player</th><th>Score</th><th>1st 3 %</th><th>1st 9 %</th><th>Best Round</th><th>D</th><th>T</th><th>Bull</th></tr>
+            <tr><th>TB Round</th><th>Target</th><th>Leaders</th><th>High Score</th><th>Per-Player Score</th></tr>
           </thead>
-          <tbody>${playerRows || '<tr><td colspan="8">No player stats yet.</td></tr>'}</tbody>
+          <tbody>${tieBreakerRows || '<tr><td colspan="5">No tie-break rounds recorded.</td></tr>'}</tbody>
         </table>
       </div>
-      <h3 class="h6">Round Order (Actual Throw Sequence)</h3>
-      <div class="table-responsive mb-3">
-        <table class="table table-sm table-hover">
-          <thead>
-            <tr><th>Round</th><th>Player</th><th>Player Round</th><th>Darts (Thrown Order)</th><th>Round Score</th><th>Match State</th></tr>
-          </thead>
-          <tbody>${visitRows || '<tr><td colspan="6">No rounds recorded.</td></tr>'}</tbody>
-        </table>
-      </div>
-      ${tieBreakerSummary ? `
-        <h3 class="h6">Tie-Breaker Data</h3>
-        <div class="text-muted small mb-2">${escapeHtml(tieBreakerReasonLabel)} • Start Target ${Number(tieBreakerSummary.startingTarget || 0)} • Winner ${escapeHtml(tieBreakerSummary.winner || record.winner || 'N/A')}</div>
-        <div class="table-responsive mb-3">
-          <table class="table table-sm">
-            <thead>
-              <tr><th>TB Round</th><th>Target</th><th>Leaders</th><th>High Score</th><th>Per-Player Score</th></tr>
-            </thead>
-            <tbody>${tieBreakerRows || '<tr><td colspan="5">No tie-break rounds recorded.</td></tr>'}</tbody>
-          </table>
-        </div>
-      ` : ''}
-    </div>
-  `;
+    `;
+  } else {
+    tiebreakerDiv.innerHTML = '';
+  }
+
+  // Return the outer HTML for compatibility with existing usage
+  return node.outerHTML;
 }
+
