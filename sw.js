@@ -1,4 +1,4 @@
-const CACHE = 'darts-cache-v1.6';
+const CACHE = 'darts-cache-v1.8';
 const ASSETS = [
   '/',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS = [
   './src/ui/scoreboardView.js',
   './src/ui/historyView.js',
   './src/ui/messageModalView.js',
+  './src/ui/savedGamesView.js',
   './src/ui/winnerCelebrationView.js',
   './src/games/baseGame.js',
   './src/games/standardCountDown.js',
@@ -22,20 +23,53 @@ const ASSETS = [
   './src/games/shanghaiScoring.js'
 ];
 
-self.addEventListener('install', e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
+self.addEventListener("install", event => {
   self.skipWaiting();
+
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+
+    // Precache all assets with cache-bypass for freshness
+    await cache.addAll(
+      ASSETS.map(url => new Request(url, { cache: "reload" }))
+    );
+  })());
 });
 
-self.addEventListener('activate', e=>{
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+
+    // 1. Delete old caches (your original logic)
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter(key => key !== CACHE)
+        .map(key => caches.delete(key))
+    );
+
+    // 2. Take control of all pages under this SW's scope
+    await self.clients.claim();
+
+    // 3. Refresh ONLY your app's windows
+    const clients = await self.clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    });
+
+    for (const client of clients) {
+      // Only refresh windows that belong to YOUR app
+      if (client.url.startsWith(self.registration.scope)) {
+        client.navigate(client.url);
+      }
+    }
+
+  })());
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
-  );
+
+self.addEventListener("fetch", event => {
+  event.respondWith((async () => {
+    const cached = await caches.match(event.request);
+    return cached || fetch(event.request);
+  })());
 });

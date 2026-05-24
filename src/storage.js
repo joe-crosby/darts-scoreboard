@@ -8,6 +8,7 @@ export async function deleteHistory(id){
     request.onerror = () => reject(request.error);
   });
 }
+
 // Minimal IndexedDB wrapper for storing games & history
 const DB_NAME = 'darts-db';
 const DB_VERSION = 3;
@@ -91,12 +92,12 @@ export async function deleteGameSnapshot(id){
   });
 }
 
-export async function saveKnownUsers(users){
+export async function saveKnownPlayers(users){
   const names = Array.isArray(users) ? users : [];
   await put('users', { id: 'known-users', names });
 }
 
-export async function listKnownUsers(){
+export async function listKnownPlayers(){
   const record = await get('users', 'known-users');
   return Array.isArray(record?.names) ? record.names : [];
 }

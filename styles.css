@@ -321,7 +321,7 @@ main {
 /* used by JS: cricketPointsOptionLabel.classList.toggle('disabled-option', ...) */
 .disabled-option { opacity: .55; }
 
-.existing-users-list {
+.existing-players-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 10px;
@@ -333,15 +333,15 @@ main {
   background: #f7fbff;
 }
 
-.existing-users-list .form-check {
+.existing-players-list .form-check {
   margin: 0;
 }
 
-.existing-users-list .form-check-label {
+.existing-players-list .form-check-label {
   user-select: none;
 }
 
-.existing-user-row {
+.existing-player-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -350,37 +350,37 @@ main {
   padding: 4px 0;
 }
 
-.existing-user-row + .existing-user-row {
+.existing-player-row + .existing-player-row {
   border-top: 2px solid rgba(110, 138, 165, 0.42);
 }
 
-.existing-user-row[data-clickable='true'] {
+.existing-player-row[data-clickable='true'] {
   cursor: pointer;
 }
 
-.existing-user-row[data-clickable='true']:hover,
-.existing-user-row[data-clickable='true']:focus-within {
+.existing-player-row[data-clickable='true']:hover,
+.existing-player-row[data-clickable='true']:focus-within {
   background: rgba(146, 186, 222, 0.2);
 }
 
-.existing-user-main {
+.existing-player-main {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
 }
 
-.existing-user-name {
+.existing-player-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.existing-user-actions {
+.existing-player-actions {
   flex-shrink: 0;
 }
 
-#existing-users-modal .btn-group {
+#existing-players-modal .btn-group {
   flex-wrap: wrap;
 }
 
@@ -584,7 +584,7 @@ main {
   box-shadow: 0 10px 32px rgba(12, 30, 49, 0.25);
 }
 
-#existing-users-modal .card-body {
+#existing-players-modal .card-body {
   width: min(560px, 92vw);
 }
 
@@ -598,7 +598,7 @@ main {
   background: linear-gradient(180deg, #fdfefe 0%, #f2f8ff 100%);
 }
 
-#existing-users-modal .existing-users-list {
+#existing-players-modal .existing-players-list {
   max-height: min(50dvh, 360px);
 }
 
@@ -762,7 +762,7 @@ main {
   color: var(--bs-body-color);
 }
 
-:root[data-theme='midnight-neon'] .existing-users-list,
+:root[data-theme='midnight-neon'] .existing-players-list,
 :root[data-theme='midnight-neon'] .history-controls,
 :root[data-theme='midnight-neon'] .history-entry,
 :root[data-theme='midnight-neon'] .resume-entry {
@@ -770,14 +770,14 @@ main {
   border-color: var(--theme-border-soft);
 }
 
-:root[data-theme='midnight-neon'] .existing-user-row + .existing-user-row,
+:root[data-theme='midnight-neon'] .existing-player-row + .existing-player-row,
 :root[data-theme='midnight-neon'] .history-entry + .history-entry,
 :root[data-theme='midnight-neon'] .resume-entry + .resume-entry {
   border-color: var(--theme-border-soft);
 }
 
-:root[data-theme='midnight-neon'] .existing-user-row[data-clickable='true']:hover,
-:root[data-theme='midnight-neon'] .existing-user-row[data-clickable='true']:focus-within {
+:root[data-theme='midnight-neon'] .existing-player-row[data-clickable='true']:hover,
+:root[data-theme='midnight-neon'] .existing-player-row[data-clickable='true']:focus-within {
   background: rgba(81, 130, 168, 0.26);
 }
 
@@ -824,7 +824,7 @@ main {
 
 :root[data-theme='midnight-neon'] #history,
 :root[data-theme='midnight-neon'] #saved-games,
-:root[data-theme='midnight-neon'] #existing-users-modal,
+:root[data-theme='midnight-neon'] #existing-players-modal,
 :root[data-theme='midnight-neon'] .message-backdrop {
   background: rgba(3, 9, 16, 0.72);
 }

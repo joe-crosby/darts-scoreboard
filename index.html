@@ -50,8 +50,8 @@
             <div class="col-sm-6">
               <label class="form-label fw-semibold">Game</label>
               <select id="game-select" class="form-select">
-                <option value="cricket">Cricket</option>
                 <option value="shanghai">Shanghai</option>
+                <option value="cricket">Cricket</option>
                 <option value="501">501</option>
                 <option value="301">301</option>
               </select>
@@ -130,8 +130,8 @@
                 <div class="card-body">
                   <h3 class="card-title h6 mb-3">Players</h3>
                   <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-                    <button id="clear-added-users" type="button" class="btn btn-outline-secondary">Clear Players</button>
-                    <button id="pick-existing-users" type="button" class="btn btn-outline-primary">View Existing</button>
+                    <button id="clear-added-players" type="button" class="btn btn-outline-secondary">Clear Players</button>
+                    <button id="pick-existing-players" type="button" class="btn btn-outline-primary">View Existing</button>
                   </div>
                   <div class="mt-2 ms-1">
                     <div class="fw-semibold text-muted mb-1" style="white-space:nowrap;">Game Players:</div>
@@ -205,8 +205,8 @@
         <h2 class="card-title h5">Game History</h2>
         <div class="history-controls mb-3">
           <div class="btn-group btn-group-sm toggle-button-group" role="group" aria-label="History view toggle">
-            <button id="history-view-history" type="button" class="btn btn-outline-primary" aria-pressed="false" aria-controls="history-list">History</button>
-            <button id="history-view-stats" type="button" class="btn btn-primary" aria-pressed="true" aria-controls="history-stats">Game Stats</button>
+            <button id="history-view-stats" type="button" class="btn btn-primary" aria-pressed="true" aria-controls="history-stats">Player Game Stats</button>
+            <button id="history-view-history" type="button" class="btn btn-outline-primary" aria-pressed="false" aria-controls="history-list">Games</button>
           </div>
           <input id="history-player-filter" class="form-control form-control-sm" placeholder="Filter by player name" aria-label="Filter history by player" />
           <button id="close-history" class="btn btn-primary btn-sm">Close</button>
@@ -257,6 +257,48 @@
       </div>
     </template>
 
+    <!-- Template for a history detail player row -->
+    <template id="history-player-row-template">
+      <tr>
+        <td class="history-player-name"></td>
+        <td class="history-player-score"></td>
+        <td class="history-player-first-three"></td>
+        <td class="history-player-first-nine"></td>
+        <td class="history-player-best-round"></td>
+        <td class="history-player-doubles"></td>
+        <td class="history-player-triples"></td>
+        <td class="history-player-bulls"></td>
+      </tr>
+    </template>
+
+    <!-- Template for a history detail visit row -->
+    <template id="history-visit-row-template">
+      <tr>
+        <td class="history-visit-round"></td>
+        <td class="history-visit-player"></td>
+        <td class="history-visit-number"></td>
+        <td class="history-visit-darts"></td>
+        <td class="history-visit-total"></td>
+        <td class="history-visit-match-state"></td>
+      </tr>
+    </template>
+
+    <!-- Template for a history tie-breaker section -->
+    <template id="history-tiebreaker-template">
+      <div class="history-detail-tiebreaker-content">
+        <h3 class="h6">Tie-Breaker Data</h3>
+        <div class="text-muted small mb-2 history-tiebreaker-meta"></div>
+        <div class="table-responsive mb-3">
+          <table class="table table-sm">
+            <thead>
+              <tr><th>TB Round</th><th>Target</th><th>Leaders</th><th>High Score</th><th>Per-Player Score</th></tr>
+            </thead>
+            <tbody class="history-tiebreaker-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </template>
+
     <!-- Template for history list entry -->
     <template id="history-list-entry-template">
       <li class="list-group-item history-entry">
@@ -295,26 +337,26 @@
       </div>
     </section>
 
-    <!-- Existing users picker modal -->
-    <section id="existing-users-modal" class="my-modal card" hidden>
+    <!-- Existing players picker modal -->
+    <section id="existing-players-modal" class="my-modal card" hidden>
       <div class="card-body">
         <h2 class="card-title h5">Existing Players</h2>
-        <div class="btn-group btn-group-sm mb-2 toggle-button-group" role="group" aria-label="Existing users mode">
-          <button id="existing-users-mode-add" type="button" class="btn btn-primary" aria-pressed="true">Add To Game</button>
-          <button id="existing-users-mode-manage" type="button" class="btn btn-outline-primary" aria-pressed="false">Manage Users</button>
+        <div class="btn-group btn-group-sm mb-2 toggle-button-group" role="group" aria-label="Existing players mode">
+          <button id="existing-players-mode-add" type="button" class="btn btn-primary" aria-pressed="true">Add To Game</button>
+          <button id="existing-players-mode-manage" type="button" class="btn btn-outline-primary" aria-pressed="false">Manage Players</button>
         </div>
         <div class="mb-2 d-flex align-items-center gap-2">
-          <div id="existing-user-add-row" class="my-3 w-100 d-flex justify-content-center">
-            <input type="text" class="form-control me-2" id="existing-user-new-name" placeholder="Add new player..." autocomplete="off">
-            <button type="button" class="btn btn-primary" id="existing-user-add-btn">Add</button>
+          <div id="existing-player-add-row" class="my-3 w-100 d-flex justify-content-center">
+            <input type="text" class="form-control me-2" id="existing-player-new-name" placeholder="Add new player..." autocomplete="off">
+            <button type="button" class="btn btn-primary" id="existing-player-add-btn">Add</button>
           </div>
         </div>
-        <div id="existing-users-picker-empty" class="small text-muted mb-2">No existing users yet. Start a game with new names to save them.</div>
-        <ul id="existing-users-picker-list" class="existing-users-list mb-3" aria-label="Existing users picker"></ul>
+        <div id="existing-players-picker-empty" class="small text-muted mb-2">No existing players yet. Start a game with new names to save them.</div>
+        <ul id="existing-players-picker-list" class="existing-players-list mb-3" aria-label="Existing players picker"></ul>
         <div class="d-flex flex-wrap gap-2 justify-content-end">
-          <button id="clear-existing-users" class="btn btn-outline-primary btn-sm" type="button">Clear</button>
-          <button id="apply-existing-users" class="btn btn-primary btn-sm" type="button">Add to Game</button>
-          <button id="close-existing-users" class="btn btn-secondary btn-sm" type="button">Close</button>
+          <button id="clear-existing-players" class="btn btn-outline-primary btn-sm" type="button">Clear</button>
+          <button id="apply-existing-players" class="btn btn-primary btn-sm" type="button">Add to Game</button>
+          <button id="close-existing-players" class="btn btn-secondary btn-sm" type="button">Close</button>
         </div>
       </div>
     </section>

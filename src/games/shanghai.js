@@ -257,14 +257,10 @@ export class Shanghai extends BaseGame{
           message = tiebreakResult.message;
         }
       } else if(turnAdvance.cycleCompleted){
-        // move this to a function this.round++;
-        if(this.round + 1>this.maxRound){
+        
+        if(this.round + 1 > this.maxRound){
           return this.resolveMainGameEnd(p);
         }
-        // this.round++;
-        // if(this.round>this.maxRound){
-        //   return this.resolveMainGameEnd(p);
-        // }
       }
       this.turnSegments = {S:false,D:false,T:false};
     }

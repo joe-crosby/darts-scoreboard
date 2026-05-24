@@ -1,4 +1,5 @@
 import { escapeHtml } from '../utils.js';
+import { showConfirm } from './messageModalView.js';
 
 function getVisitKey(visit){
   return `${visit.playerName}::${visit.visitNumber}`;
@@ -177,6 +178,137 @@ function buildVisitOrder(record){
   return { visits, chronologicalThrows };
 }
 
+function cloneTemplateElement(templateId){
+  const template = document.getElementById(templateId);
+  return template?.content?.firstElementChild?.cloneNode(true) || null;
+}
+
+function createPlayerPerformanceRow(player, stats){
+  const row = cloneTemplateElement('history-player-row-template');
+  if(!row){
+    const fallback = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 8;
+    cell.textContent = `Player ${player.name}`;
+    fallback.appendChild(cell);
+    return fallback;
+  }
+
+  row.querySelector('.history-player-name').textContent = player.name;
+  row.querySelector('.history-player-score').textContent = Number(player.score || 0);
+  row.querySelector('.history-player-first-three').textContent = `${stats.firstThreePercent.toFixed(1)}%`;
+  row.querySelector('.history-player-first-nine').textContent = `${stats.firstNinePercent.toFixed(1)}%`;
+  row.querySelector('.history-player-best-round').textContent = stats.bestRound;
+  row.querySelector('.history-player-doubles').textContent = stats.doublesHit;
+  row.querySelector('.history-player-triples').textContent = stats.triplesHit;
+  row.querySelector('.history-player-bulls').textContent = stats.bullsHit;
+  return row;
+}
+
+function createVisitRow(visit, formattedMatchStateHtml){
+  const row = cloneTemplateElement('history-visit-row-template');
+  if(!row){
+    const fallback = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 6;
+    cell.textContent = `Round ${visit.round} ${visit.playerName}`;
+    fallback.appendChild(cell);
+    return fallback;
+  }
+
+  row.querySelector('.history-visit-round').textContent = `R${visit.round}`;
+  row.querySelector('.history-visit-player').textContent = visit.playerName;
+  row.querySelector('.history-visit-number').textContent = visit.visitNumber;
+  row.querySelector('.history-visit-darts').textContent = visit.darts.map((dart) => dart.label).join(' • ');
+  row.querySelector('.history-visit-total').textContent = visit.total;
+  const matchStateCell = row.querySelector('.history-visit-match-state');
+  matchStateCell.innerHTML = formattedMatchStateHtml;
+  return row;
+}
+
+function createTieBreakerRow(round){
+  const row = cloneTemplateElement('history-tiebreaker-row-template');
+  if(!row){
+    const fallback = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 5;
+    cell.textContent = `TB Round ${round.round}`;
+    fallback.appendChild(cell);
+    return fallback;
+  }
+
+  row.querySelector('.history-tiebreaker-round').textContent = Number(round.round || 0);
+  row.querySelector('.history-tiebreaker-target').textContent = Number(round.target || 0);
+  row.querySelector('.history-tiebreaker-leaders').textContent = (round.leaders || []).join(', ') || '-';
+  row.querySelector('.history-tiebreaker-high-score').textContent = Number(round.highScore || 0);
+  row.querySelector('.history-tiebreaker-scores').textContent = (round.scores || [])
+    .map((entry) => `${entry.player}: ${Number(entry.score || 0)}`)
+    .join(' | ') || '-';
+  return row;
+}
+
+function formatMatchStateHtml(matchState){
+  if(typeof matchState === 'string' && matchState.endsWith(' BUST')){
+    const value = escapeHtml(matchState.replace(/\s*BUST$/, '').trim());
+    return `${value} <span class="turn-badge">BUST</span>`;
+  }
+  if(typeof matchState === 'string' && matchState.endsWith(' NO-DOUBLE-OUT')){
+    const value = escapeHtml(matchState.replace(/\s*NO-DOUBLE-OUT$/, '').trim());
+    return `${value} <span class="turn-badge turn-badge-double-out" title="Did not double out">NO D/O</span>`;
+  }
+  return escapeHtml(matchState);
+}
+
+export function createHistoryEntryItem(record, onDelete){
+  const template = document.getElementById('history-list-entry-template');
+  if(!template) return null;
+  const item = template.content.firstElementChild.cloneNode(true);
+  const label = item.querySelector('.history-label');
+  const players = (record.players || []).map((player) => player.name).join(', ');
+  const shanghaiFinishRound = getShanghaiFinishRound(record);
+  const winnerLabel = record.winners?.length > 1
+    ? `Winners: ${record.winners.join(', ')}`
+    : `Winner: ${record.winner}`;
+  const winnerFlair = shanghaiFinishRound
+    ? ` <span class="shanghai-finish-badge">SHANGHAI FINISH • ${shanghaiFinishRound}</span>`
+    : '';
+
+  if(label){
+    label.innerHTML = `
+      <div><strong>${escapeHtml(record.gameLabel || record.game)}</strong> • ${new Date(record.finishedAt).toLocaleString()}</div>
+      <div class="text-muted small">${escapeHtml(winnerLabel)}${winnerFlair} • Players: ${escapeHtml(players)}</div>
+    `;
+  }
+
+  const viewBtn = item.querySelector('.history-view-btn');
+  const inlineDetail = item.querySelector('.history-inline-detail');
+  if(viewBtn && inlineDetail){
+    viewBtn.addEventListener('click', () => {
+      const isOpen = !inlineDetail.hidden;
+      inlineDetail.hidden = isOpen;
+      viewBtn.textContent = isOpen ? 'View' : 'Hide';
+      viewBtn.setAttribute('aria-expanded', String(!isOpen));
+      if(!isOpen && !inlineDetail.dataset.rendered){
+        inlineDetail.innerHTML = renderHistoryDetailHtml(record);
+        inlineDetail.dataset.rendered = '1';
+      }
+    });
+  }
+
+  const deleteBtn = item.querySelector('.history-delete-btn');
+  if(deleteBtn){
+    deleteBtn.addEventListener('click', async () => {
+      const confirmed = await showConfirm('Delete this history item? This cannot be undone.', 'Delete History');
+      if (!confirmed) return;
+      if(typeof onDelete === 'function'){
+        await onDelete(record);
+      }
+    });
+  }
+
+  return item;
+}
+
 function buildPlayerPerformanceRows(record, visitData){
   const throwsByPlayer = new Map();
   for(const throwRecord of visitData.chronologicalThrows){
@@ -210,19 +342,15 @@ function buildPlayerPerformanceRows(record, visitData){
     const triplesHit = playerThrows.filter((throwRecord) => throwRecord.ring === 'T').length;
     const bullsHit = playerThrows.filter((throwRecord) => throwRecord.target === 'BULL').length;
 
-    return `
-      <tr>
-        <td>${escapeHtml(player.name)}</td>
-        <td>${Number(player.score || 0)}</td>
-        <td>${firstThreePercent.toFixed(1)}%</td>
-        <td>${firstNinePercent.toFixed(1)}%</td>
-        <td>${bestRound}</td>
-        <td>${doublesHit}</td>
-        <td>${triplesHit}</td>
-        <td>${bullsHit}</td>
-      </tr>
-    `;
-  }).join('');
+    return createPlayerPerformanceRow(player, {
+      firstThreePercent,
+      firstNinePercent,
+      bestRound,
+      doublesHit,
+      triplesHit,
+      bullsHit
+    });
+  });
 }
 
 export function getShanghaiFinishRound(record){
@@ -267,69 +395,60 @@ export function renderHistoryDetailHtml(record){
   node.querySelector('.history-detail-winner').innerHTML = `<strong>${escapeHtml(winnerLabel)}</strong>${winnerFlair}`;
 
   // Player performance rows
-  const playerRowsHtml = buildPlayerPerformanceRows(record, visitData);
+  const playerRows = buildPlayerPerformanceRows(record, visitData);
   const playerRowsTbody = node.querySelector('.history-detail-player-rows');
-  playerRowsTbody.innerHTML = playerRowsHtml || '<tr><td colspan="8">No player stats yet.</td></tr>';
+  if(playerRows.length){
+    playerRowsTbody.replaceChildren(...playerRows);
+  } else {
+    const emptyRow = document.createElement('tr');
+    const emptyCell = document.createElement('td');
+    emptyCell.colSpan = 8;
+    emptyCell.textContent = 'No player stats yet.';
+    emptyRow.appendChild(emptyCell);
+    playerRowsTbody.replaceChildren(emptyRow);
+  }
 
   // Visit rows
-  const visitRowsHtml = roundOrderVisits.map((visit) => {
+  const visitRows = roundOrderVisits.map((visit) => {
     const matchState = getMatchStateForVisit(visit, stateByVisit);
-    const formattedMatchState = (() => {
-      if(typeof matchState === 'string' && matchState.endsWith(' BUST')){
-        const value = escapeHtml(matchState.replace(/\s*BUST$/, '').trim());
-        return `${value} <span class="turn-badge">BUST</span>`;
-      }
-      if(typeof matchState === 'string' && matchState.endsWith(' NO-DOUBLE-OUT')){
-        const value = escapeHtml(matchState.replace(/\s*NO-DOUBLE-OUT$/, '').trim());
-        return `${value} <span class="turn-badge turn-badge-double-out" title="Did not double out">NO D/O</span>`;
-      }
-      return escapeHtml(matchState);
-    })();
-    return `
-      <tr>
-        <td>R${visit.round}</td>
-        <td>${escapeHtml(visit.playerName)}</td>
-        <td>${visit.visitNumber}</td>
-        <td>${visit.darts.map((dart) => dart.label).join(' • ')}</td>
-        <td>${visit.total}</td>
-        <td>${formattedMatchState}</td>
-      </tr>
-    `;
-  }).join('');
+    return createVisitRow(visit, formatMatchStateHtml(matchState));
+  });
   const visitRowsTbody = node.querySelector('.history-detail-visit-rows');
-  visitRowsTbody.innerHTML = visitRowsHtml || '<tr><td colspan="6">No rounds recorded.</td></tr>';
+  if(visitRows.length){
+    visitRowsTbody.replaceChildren(...visitRows);
+  } else {
+    const emptyRow = document.createElement('tr');
+    const emptyCell = document.createElement('td');
+    emptyCell.colSpan = 6;
+    emptyCell.textContent = 'No rounds recorded.';
+    emptyRow.appendChild(emptyCell);
+    visitRowsTbody.replaceChildren(emptyRow);
+  }
 
   // Tie-breaker section
   const tiebreakerDiv = node.querySelector('.history-detail-tiebreaker');
   if (tieBreakerSummary) {
-    const tieBreakerRows = (tieBreakerSummary?.rounds || []).map((round) => {
-      const scoreLine = (round.scores || [])
-        .map((entry) => `${escapeHtml(entry.player)}: ${Number(entry.score || 0)}`)
-        .join(' | ');
-      return `
-        <tr>
-          <td>${Number(round.round || 0)}</td>
-          <td>${Number(round.target || 0)}</td>
-          <td>${escapeHtml((round.leaders || []).join(', ') || '-')}</td>
-          <td>${Number(round.highScore || 0)}</td>
-          <td>${scoreLine || '-'}</td>
-        </tr>
-      `;
-    }).join('');
-    tiebreakerDiv.innerHTML = `
-      <h3 class="h6">Tie-Breaker Data</h3>
-      <div class="text-muted small mb-2">${escapeHtml(tieBreakerReasonLabel)} • Start Target ${Number(tieBreakerSummary.startingTarget || 0)} • Winner ${escapeHtml(tieBreakerSummary.winner || record.winner || 'N/A')}</div>
-      <div class="table-responsive mb-3">
-        <table class="table table-sm">
-          <thead>
-            <tr><th>TB Round</th><th>Target</th><th>Leaders</th><th>High Score</th><th>Per-Player Score</th></tr>
-          </thead>
-          <tbody>${tieBreakerRows || '<tr><td colspan="5">No tie-break rounds recorded.</td></tr>'}</tbody>
-        </table>
-      </div>
-    `;
+    const tieTemplate = cloneTemplateElement('history-tiebreaker-template');
+    if(tieTemplate){
+      tieTemplate.querySelector('.history-tiebreaker-meta').textContent = `${escapeHtml(tieBreakerReasonLabel)} • Start Target ${Number(tieBreakerSummary.startingTarget || 0)} • Winner ${escapeHtml(tieBreakerSummary.winner || record.winner || 'N/A')}`;
+      const tieRows = (tieBreakerSummary?.rounds || []).map(createTieBreakerRow);
+      const tbody = tieTemplate.querySelector('.history-tiebreaker-rows');
+      if(tieRows.length){
+        tbody.replaceChildren(...tieRows);
+      } else {
+        const emptyRow = document.createElement('tr');
+        const emptyCell = document.createElement('td');
+        emptyCell.colSpan = 5;
+        emptyCell.textContent = 'No tie-break rounds recorded.';
+        emptyRow.appendChild(emptyCell);
+        tbody.replaceChildren(emptyRow);
+      }
+      tiebreakerDiv.replaceChildren(...Array.from(tieTemplate.childNodes));
+    } else {
+      tiebreakerDiv.textContent = `${tieBreakerReasonLabel} • Start Target ${Number(tieBreakerSummary.startingTarget || 0)} • Winner ${record.winner || 'N/A'}`;
+    }
   } else {
-    tiebreakerDiv.innerHTML = '';
+    tiebreakerDiv.textContent = '';
   }
 
   // Return the outer HTML for compatibility with existing usage

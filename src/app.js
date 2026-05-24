@@ -1,49 +1,51 @@
 
-function updateExistingUserAddRowVisibility() {
-  const row = document.getElementById('existing-user-add-row');
-  if (!row) return;
-  row.classList.toggle('d-none', existingUsersModalMode !== 'add');
-}
-
-// --- Add new player directly in existing users modal ---
-const existingUserNewNameInput = document.getElementById('existing-user-new-name');
-const existingUserAddBtn = document.getElementById('existing-user-add-btn');
-
-if (existingUserAddBtn && existingUserNewNameInput) {
-  existingUserAddBtn.addEventListener('click', async () => {
-    const name = normalizePlayerName(existingUserNewNameInput.value);
-    if (!name) {
-      showMessage('Name cannot be empty.', 'Invalid Name', 'error');
-      existingUserNewNameInput.focus();
-      return;
-    }
-    const nameKey = playerNameKey(name);
-    const exists = knownUsers.some(n => playerNameKey(n) === nameKey);
-    if (exists) {
-      showMessage(`Player "${name}" already exists.`, 'Duplicate Player', 'error');
-      existingUserNewNameInput.focus();
-      return;
-    }
-    knownUsers.push(name);
-    await saveKnownUsers(knownUsers);
-    renderKnownUsers();
-    existingUserNewNameInput.value = '';
-    existingUserNewNameInput.focus();
-  });
-  existingUserNewNameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      existingUserAddBtn.click();
-    }
-  });
-}
 import { GAME_REGISTRY } from './gameRegistry.js';
 import { renderScoreboardHtml } from './ui/scoreboardView.js';
-import { getShanghaiFinishRound, renderHistoryDetailHtml } from './ui/historyView.js';
+import { getShanghaiFinishRound, renderHistoryDetailHtml, createHistoryEntryItem } from './ui/historyView.js';
+import { renderResumeList } from './ui/savedGamesView.js';
 import { MessageModalController, initializeMessageModal, showMessage, showConfirm, showPrompt, closeMessage } from './ui/messageModalView.js';
 import { createWinnerCelebrationModal } from './ui/winnerCelebrationView.js';
 import { escapeHtml } from './utils.js';
 import * as storage from './storage.js';
 import { formatSummaryHtml, summarizeHistory } from './stats.js';
+
+function updateExistingPlayerAddRowVisibility() {
+  const row = document.getElementById('existing-player-add-row');
+  if (!row) return;
+  row.classList.toggle('d-none', existingPlayersModalMode !== 'manage');
+}
+
+// --- Add new player directly in existing players modal ---
+const existingPlayerNewNameInput = document.getElementById('existing-player-new-name');
+const existingPlayerAddBtn = document.getElementById('existing-player-add-btn');
+
+if (existingPlayerAddBtn && existingPlayerNewNameInput) {
+  existingPlayerAddBtn.addEventListener('click', async () => {
+    const name = normalizePlayerName(existingPlayerNewNameInput.value);
+    if (!name) {
+      showMessage('Name cannot be empty.', 'Invalid Name', 'error');
+      existingPlayerNewNameInput.focus();
+      return;
+    }
+    const nameKey = playerNameKey(name);
+    const exists = knownPlayers.some(n => playerNameKey(n) === nameKey);
+    if (exists) {
+      showMessage(`Player "${name}" already exists.`, 'Duplicate Player', 'error');
+      existingPlayerNewNameInput.focus();
+      return;
+    }
+    knownPlayers.push(name);
+    await saveKnownPlayers(knownPlayers);
+    renderKnownPlayers();
+    existingPlayerNewNameInput.value = '';
+    existingPlayerNewNameInput.focus();
+  });
+  existingPlayerNewNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      existingPlayerAddBtn.click();
+    }
+  });
+}
 
 const header = document.querySelector('header');
 const boardContainer = document.getElementById('board-container');
@@ -57,22 +59,22 @@ const savedGamesEl = document.getElementById('saved-games');
 const closeSavedGamesBtn = document.getElementById('close-saved-games');
 const resumeListEl = document.getElementById('resume-list');
 const themeSelectEl = document.getElementById('theme-select');
-const pickExistingUsersBtn = document.getElementById('pick-existing-users');
-const clearAddedUsersBtn = document.getElementById('clear-added-users');
-const selectedExistingUsersSummaryEl = document.getElementById('selected-existing-users-summary');
+const pickExistingPlayersBtn = document.getElementById('pick-existing-players');
+const clearAddedPlayersBtn = document.getElementById('clear-added-players');
+const selectedExistingPlayersSummaryEl = document.getElementById('selected-existing-users-summary');
 const addPlayersModalEl = document.getElementById('add-players-modal');
 const openAddPlayersModalBtn = document.getElementById('open-add-players-modal');
 const addPlayersConfirmBtn = document.getElementById('add-players-confirm');
 const addPlayersCancelBtn = document.getElementById('add-players-cancel');
 const addedPlayersTableBody = document.querySelector('#added-players-table tbody');
-const existingUsersModalEl = document.getElementById('existing-users-modal');
-const existingUsersPickerListEl = document.getElementById('existing-users-picker-list');
-const existingUsersPickerEmptyEl = document.getElementById('existing-users-picker-empty');
-const existingUsersModeAddBtn = document.getElementById('existing-users-mode-add');
-const existingUsersModeManageBtn = document.getElementById('existing-users-mode-manage');
-const clearExistingUsersBtn = document.getElementById('clear-existing-users');
-const closeExistingUsersBtn = document.getElementById('close-existing-users');
-const applyExistingUsersBtn = document.getElementById('apply-existing-users');
+const existingPlayersModalEl = document.getElementById('existing-players-modal');
+const existingPlayersPickerListEl = document.getElementById('existing-players-picker-list');
+const existingPlayersPickerEmptyEl = document.getElementById('existing-players-picker-empty');
+const existingPlayersModeAddBtn = document.getElementById('existing-players-mode-add');
+const existingPlayersModeManageBtn = document.getElementById('existing-players-mode-manage');
+const clearExistingPlayersBtn = document.getElementById('clear-existing-players');
+const closeExistingPlayersBtn = document.getElementById('close-existing-players');
+const applyExistingPlayersBtn = document.getElementById('apply-existing-players');
 const gameSelect = document.getElementById('game-select');
 const cricketOptionsEl = document.getElementById('cricket-options');
 const cricketModeEl = document.getElementById('cricket-mode');
@@ -135,11 +137,11 @@ let lastGameSetup = null;
 let historyViewMode = 'history';
 let snapshotCache = [];
 let sessionWasResumed = false;
-let knownUsers = [];
+let knownPlayers = [];
 let gamePlayers = [];
-// Tracks the users currently selected in the existing users modal (in selection order)
-let selectedExistingUsers = [];
-let existingUsersModalMode = 'add';
+// Tracks the players currently selected in the existing players modal (in selection order)
+let selectedExistingPlayers = [];
+let existingPlayersModalMode = 'add';
 let toastHideTimer = null;
 
 const APP_THEME_SETTING_ID = 'app-theme';
@@ -230,43 +232,43 @@ function findDuplicatePlayerNames(names){
   return duplicates;
 }
 
-async function loadKnownUsers(){
-  const users = await storage.listKnownUsers();
-  return uniquePlayerNames(users);
+async function loadKnownPlayers(){  
+  const players = await storage.listKnownPlayers();
+  return uniquePlayerNames(players);
 }
 
-async function saveKnownUsers(users){
-  const normalized = uniquePlayerNames(users);
-  knownUsers = normalized;
-  await storage.saveKnownUsers(normalized);
+async function saveKnownPlayers(players){
+  const normalized = uniquePlayerNames(players);
+  knownPlayers = normalized;
+  await storage.saveKnownPlayers(normalized);
 }
 
-async function initializeKnownUsers(){
-  knownUsers = await loadKnownUsers();
-  renderKnownUsers();
+async function initializeKnownPlayers(){
+  knownPlayers = await loadKnownPlayers();
+  renderKnownPlayers();
 }
 
-function getSelectedExistingUsers(){
-  // For compatibility, return the known users in the current game
-  return gamePlayers.filter(name => knownUsers.some(u => playerNameKey(u) === playerNameKey(name)));
+function getSelectedExistingPlayers(){
+  // For compatibility, return the known players in the current game
+  return gamePlayers.filter(name => knownPlayers.some(u => playerNameKey(u) === playerNameKey(name)));
 }
 
-function updateSelectedExistingUsersSummary(){
-  if(!selectedExistingUsersSummaryEl){
+function updateSelectedExistingPlayersSummary(){
+  if(!selectedExistingPlayersSummaryEl){
     return;
   }
-  // Show how many of the current gamePlayers are known users
-  const knownInGame = gamePlayers.filter(name => knownUsers.some(u => playerNameKey(u) === playerNameKey(name)));
+  // Show how many of the current gamePlayers are known players
+  const knownInGame = gamePlayers.filter(name => knownPlayers.some(u => playerNameKey(u) === playerNameKey(name)));
   if(knownInGame.length === 0){
-    selectedExistingUsersSummaryEl.textContent = 'No existing users included.';
-    if(clearAddedUsersBtn){
-      clearAddedUsersBtn.disabled = true;
+    selectedExistingPlayersSummaryEl.textContent = 'No existing players included.';
+    if(clearAddedPlayersBtn){
+      clearAddedPlayersBtn.disabled = true;
     }
     return;
   }
-  selectedExistingUsersSummaryEl.textContent = `${knownInGame.length} included: ${knownInGame.join(', ')}`;
-  if(clearAddedUsersBtn){
-    clearAddedUsersBtn.disabled = false;
+  selectedExistingPlayersSummaryEl.textContent = `${knownInGame.length} included: ${knownInGame.join(', ')}`;
+  if(clearAddedPlayersBtn){
+    clearAddedPlayersBtn.disabled = false;
   }
   renderAddedPlayersTable();
 }
@@ -293,222 +295,220 @@ function renderAddedPlayersTable() {
     removeBtn.addEventListener('click', () => {
       gamePlayers.splice(idx, 1);
       renderAddedPlayersTable();
-      updateSelectedExistingUsersSummary();
+      updateSelectedExistingPlayersSummary();
     });
     flexContainer.appendChild(chip);
   });
 }
 
-function clearAddedExistingUsers(){
+function clearAddedExistingPlayers(){
   gamePlayers = [];
-  updateSelectedExistingUsersSummary();
-  renderKnownUsers();
+  updateSelectedExistingPlayersSummary();
+  renderKnownPlayers();
   renderAddedPlayersTable();
 }
 
-function updateExistingUsersModalControls(){
-  if(!existingUsersModeAddBtn || !existingUsersModeManageBtn){
+function updateExistingPlayersModalControls(){
+  if(!existingPlayersModeAddBtn || !existingPlayersModeManageBtn){
     return;
   }
-  const isAddMode = existingUsersModalMode === 'add';
-  existingUsersModeAddBtn.classList.toggle('btn-primary', isAddMode);
-  existingUsersModeAddBtn.classList.toggle('btn-outline-primary', !isAddMode);
-  existingUsersModeAddBtn.setAttribute('aria-pressed', String(isAddMode));
+  const isAddMode = existingPlayersModalMode === 'add';
+  existingPlayersModeAddBtn.classList.toggle('btn-primary', isAddMode);
+  existingPlayersModeAddBtn.classList.toggle('btn-outline-primary', !isAddMode);
+  existingPlayersModeAddBtn.setAttribute('aria-pressed', String(isAddMode));
 
-  existingUsersModeManageBtn.classList.toggle('btn-primary', !isAddMode);
-  existingUsersModeManageBtn.classList.toggle('btn-outline-primary', isAddMode);
-  existingUsersModeManageBtn.setAttribute('aria-pressed', String(!isAddMode));
+  existingPlayersModeManageBtn.classList.toggle('btn-primary', !isAddMode);
+  existingPlayersModeManageBtn.classList.toggle('btn-outline-primary', isAddMode);
+  existingPlayersModeManageBtn.setAttribute('aria-pressed', String(!isAddMode));
 
-  if(applyExistingUsersBtn){
-    applyExistingUsersBtn.hidden = !isAddMode;
+  if(applyExistingPlayersBtn){
+    applyExistingPlayersBtn.hidden = !isAddMode;
   }
-  if(clearExistingUsersBtn){
-    clearExistingUsersBtn.hidden = !isAddMode;
+  if(clearExistingPlayersBtn){
+    clearExistingPlayersBtn.hidden = !isAddMode;
   }
 }
 
-function setExistingUsersModalMode(mode){
-  existingUsersModalMode = mode === 'manage' ? 'manage' : 'add';
-  updateExistingUsersModalControls();
-  renderKnownUsers();
-  updateExistingUsersSelectionButtons();
-  updateExistingUserAddRowVisibility();
+function setExistingPlayersModalMode(mode){
+  existingPlayersModalMode = mode === 'manage' ? 'manage' : 'add';
+  updateExistingPlayersModalControls();
+  renderKnownPlayers();
+  updateExistingPlayersSelectionButtons();
+  updateExistingPlayerAddRowVisibility();
 }
 
-function renderKnownUsers(){
-  if(!existingUsersPickerListEl || !existingUsersPickerEmptyEl || !pickExistingUsersBtn){
+function renderKnownPlayers(){
+  if(!existingPlayersPickerListEl || !existingPlayersPickerEmptyEl || !pickExistingPlayersBtn){
     return;
   }
   // Always use empty selection for checkboxes
   const selectedKeys = new Set();
-  existingUsersPickerListEl.innerHTML = '';
+  existingPlayersPickerListEl.innerHTML = '';
 
-  // Sort knownUsers alphabetically (case-insensitive)
-  const sortedKnownUsers = [...knownUsers].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+  // Sort knownPlayers alphabetically (case-insensitive)
+  const sortedKnownPlayers = [...knownPlayers].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
 
-  if(sortedKnownUsers.length === 0){
-    existingUsersPickerListEl.hidden = true;
-    existingUsersPickerEmptyEl.hidden = false;
-    pickExistingUsersBtn.disabled = true;
-    selectedExistingUsers = [];
-    updateSelectedExistingUsersSummary();
-    updateExistingUsersSelectionButtons();
+  if(sortedKnownPlayers.length === 0){
+    existingPlayersPickerListEl.hidden = true;
+    existingPlayersPickerEmptyEl.hidden = false;
+    selectedExistingPlayers = [];
+    updateSelectedExistingPlayersSummary();
+    updateExistingPlayersSelectionButtons();
     return;
   }
 
-  existingUsersPickerListEl.hidden = false;
-  existingUsersPickerEmptyEl.hidden = true;
-  pickExistingUsersBtn.disabled = false;
+  existingPlayersPickerListEl.hidden = false;
+  existingPlayersPickerEmptyEl.hidden = true;
 
-  sortedKnownUsers.forEach((userName, index) => {
+  sortedKnownPlayers.forEach((playerName, index) => {
     const wrapper = document.createElement('li');
-    wrapper.className = 'existing-user-row';
+    wrapper.className = 'existing-player-row';
 
     const main = document.createElement('div');
-    main.className = 'existing-user-main';
+    main.className = 'existing-player-main';
 
-    if(existingUsersModalMode === 'add'){
+    if(existingPlayersModalMode === 'add'){
       wrapper.dataset.clickable = 'true';
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'form-check-input';
-      checkbox.id = `existing-user-${index}`;
-      checkbox.value = userName;
-      checkbox.checked = selectedKeys.has(playerNameKey(userName));
+      checkbox.id = `existing-player-${index}`;
+      checkbox.value = playerName;
+      checkbox.checked = selectedKeys.has(playerNameKey(playerName));
 
       const label = document.createElement('label');
-      label.className = 'form-check-label existing-user-name';
+      label.className = 'form-check-label existing-player-name';
       label.htmlFor = checkbox.id;
-      label.textContent = userName;
+      label.textContent = playerName;
 
       main.append(checkbox, label);
       wrapper.append(main);
     } else {
       const label = document.createElement('span');
-      label.className = 'existing-user-name';
-      label.textContent = userName;
+      label.className = 'existing-player-name';
+      label.textContent = playerName;
 
       const deleteBtn = document.createElement('button');
       deleteBtn.type = 'button';
       deleteBtn.className = 'btn btn-secondary btn-sm';
       deleteBtn.textContent = 'Delete';
-      deleteBtn.setAttribute('data-action', 'delete-user');
-      deleteBtn.setAttribute('data-user-name', userName);
+      deleteBtn.setAttribute('data-action', 'delete-player');
+      deleteBtn.setAttribute('data-player-name', playerName);
 
       const renameBtn = document.createElement('button');
       renameBtn.type = 'button';
       renameBtn.className = 'btn btn-outline-primary btn-sm';
       renameBtn.textContent = 'Rename';
-      renameBtn.setAttribute('data-action', 'rename-user');
-      renameBtn.setAttribute('data-user-name', userName);
+      renameBtn.setAttribute('data-action', 'rename-player');
+      renameBtn.setAttribute('data-player-name', playerName);
 
       const actions = document.createElement('div');
-      actions.className = 'existing-user-actions d-flex gap-1';
+      actions.className = 'existing-player-actions d-flex gap-1';
       actions.append(renameBtn, deleteBtn);
 
       main.append(label);
       wrapper.append(main, actions);
     }
 
-    existingUsersPickerListEl.appendChild(wrapper);
+    existingPlayersPickerListEl.appendChild(wrapper);
   });
 
-  // Do not update selectedExistingUsers here; only update summary/buttons
-  updateSelectedExistingUsersSummary();
-  updateExistingUsersSelectionButtons();
+  // Do not update selectedExistingPlayers here; only update summary/buttons
+  updateSelectedExistingPlayersSummary();
+  updateExistingPlayersSelectionButtons();
 }
 
-function openExistingUsersModal(){
-  if(!existingUsersModalEl){
+function openExistingPlayersModal(){
+  if(!existingPlayersModalEl){
     return;
   }
-  setExistingUsersModalMode('add');
-  // Always open with no users selected
-  selectedExistingUsers = [];
-  renderKnownUsers();
-  existingUsersModalEl.hidden = false;
+  setExistingPlayersModalMode('add');
+  // Always open with no players selected
+  selectedExistingPlayers = [];
+  renderKnownPlayers();
+  existingPlayersModalEl.hidden = false;
 }
 
-function closeExistingUsersModal(){
-  if(!existingUsersModalEl){
+function closeExistingPlayersModal(){
+  if(!existingPlayersModalEl){
     return;
   }
-  existingUsersModalEl.hidden = true;
+  existingPlayersModalEl.hidden = true;
 }
 
-function getCheckedExistingUsersInModal(){
-  if(!existingUsersPickerListEl){
+function getCheckedExistingPlayersInModal(){
+  if(!existingPlayersPickerListEl){
     return [];
   }
-  return Array.from(existingUsersPickerListEl.querySelectorAll('input[type="checkbox"]:checked'))
+  return Array.from(existingPlayersPickerListEl.querySelectorAll('input[type="checkbox"]:checked'))
     .map((checkbox) => normalizePlayerName(checkbox.value))
     .filter(Boolean);
 }
 
-function updateExistingUsersSelectionButtons(){
-  if(existingUsersModalMode !== 'add'){
-    if(applyExistingUsersBtn){
-      applyExistingUsersBtn.disabled = true;
+function updateExistingPlayersSelectionButtons(){
+  if(existingPlayersModalMode !== 'add'){
+    if(applyExistingPlayersBtn){
+      applyExistingPlayersBtn.disabled = true;
     }
-    if(clearExistingUsersBtn){
-      clearExistingUsersBtn.disabled = true;
+    if(clearExistingPlayersBtn){
+      clearExistingPlayersBtn.disabled = true;
     }
     return;
   }
 
-  const hasSelectedUsers = getCheckedExistingUsersInModal().length > 0;
-  if(applyExistingUsersBtn){
-    applyExistingUsersBtn.disabled = !hasSelectedUsers;
+  const hasSelectedPlayers = getCheckedExistingPlayersInModal().length > 0;
+  if(applyExistingPlayersBtn){
+    applyExistingPlayersBtn.disabled = !hasSelectedPlayers;
   }
-  if(clearExistingUsersBtn){
-    clearExistingUsersBtn.disabled = !hasSelectedUsers;
+  if(clearExistingPlayersBtn){
+    clearExistingPlayersBtn.disabled = !hasSelectedPlayers;
   }
 }
 
-function applyExistingUsersSelection(){
-  if(!existingUsersPickerListEl){
+function applyExistingPlayersSelection(){
+  if(!existingPlayersPickerListEl){
     return;
   }
 
-  // Add checked users to gamePlayers in the order selected, avoiding duplicates
-  gamePlayers = uniquePlayerNames([...gamePlayers, ...selectedExistingUsers]);
-  updateSelectedExistingUsersSummary();
-  closeExistingUsersModal();
+  // Add checked players to gamePlayers in the order selected, avoiding duplicates
+  gamePlayers = uniquePlayerNames([...gamePlayers, ...selectedExistingPlayers]);
+  updateSelectedExistingPlayersSummary();
+  closeExistingPlayersModal();
   renderAddedPlayersTable();
 }
 
-function clearExistingUsersSelection(){
-  if(existingUsersPickerListEl){
-    existingUsersPickerListEl.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+function clearExistingPlayersSelection(){
+  if(existingPlayersPickerListEl){
+    existingPlayersPickerListEl.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
       checkbox.checked = false;
     });
   }
-  selectedExistingUsers = [];
-  updateExistingUsersSelectionButtons();
+  selectedExistingPlayers = [];
+  updateExistingPlayersSelectionButtons();
 }
 
-async function deleteExistingUser(userName){
-  const normalizedName = normalizePlayerName(userName);
+async function deleteExistingPlayer(playerName){
+  const normalizedName = normalizePlayerName(playerName);
   if(!normalizedName){
     return;
   }
 
   const confirmed = await showConfirm(
-    `Delete user "${normalizedName}" from existing users?\n\nThis will also permanently delete all of their stats from game history. Game records will remain if other players participated. This cannot be undone.`,
-    'Delete User'
+    `Delete player "${normalizedName}" from existing players?\n\nThis will also permanently delete all of their stats from game history. Game records will remain if other players participated. This cannot be undone.`,
+    'Delete Player'
   );
   if(!confirmed){
     return;
   }
 
-  // Remove user from known users
-  knownUsers = knownUsers.filter((name) => playerNameKey(name) !== playerNameKey(normalizedName));
-  selectedExistingUsers = selectedExistingUsers.filter((name) => playerNameKey(name) !== playerNameKey(normalizedName));
-  await saveKnownUsers(knownUsers);
-  renderKnownUsers();
+  // Remove player from known players
+  knownPlayers = knownPlayers.filter((name) => playerNameKey(name) !== playerNameKey(normalizedName));
+  selectedExistingPlayers = selectedExistingPlayers.filter((name) => playerNameKey(name) !== playerNameKey(normalizedName));
+  await saveKnownPlayers(knownPlayers);
+  renderKnownPlayers();
 
 
-  // Remove user from all history records' players arrays
+  // Remove player from all history records' players arrays
   const allHistory = await storage.listHistory();
   for(const record of allHistory) {
     if(Array.isArray(record.players)) {
@@ -532,13 +532,13 @@ async function deleteExistingUser(userName){
   }
 }
 
-async function renameExistingUser(userName){
-  const previousName = normalizePlayerName(userName);
+async function renameExistingPlayer(playerName){
+  const previousName = normalizePlayerName(playerName);
   if(!previousName){
     return;
   }
 
-  const nextNameRaw = await showPrompt('Enter a new unique user name:', 'Rename User', previousName);
+  const nextNameRaw = await showPrompt('Enter a new unique player name:', 'Rename Player', previousName);
   if(nextNameRaw === null){
     return;
   }
@@ -553,20 +553,20 @@ async function renameExistingUser(userName){
     return;
   }
 
-  const conflict = knownUsers.some((name) => playerNameKey(name) === playerNameKey(nextName));
+  const conflict = knownPlayers.some((name) => playerNameKey(name) === playerNameKey(nextName));
   if(conflict){
-    await showMessage(`A user named \"${nextName}\" already exists.`, 'Duplicate Name', 'error');
+    await showMessage(`A player named \"${nextName}\" already exists.`, 'Duplicate Name', 'error');
     return;
   }
 
-  knownUsers = knownUsers.map((name) => (
+  knownPlayers = knownPlayers.map((name) => (
     playerNameKey(name) === playerNameKey(previousName) ? nextName : name
   ));
-  selectedExistingUsers = selectedExistingUsers.map((name) => (
+  selectedExistingPlayers = selectedExistingPlayers.map((name) => (
     playerNameKey(name) === playerNameKey(previousName) ? nextName : name
   ));
-  await saveKnownUsers(knownUsers);
-  renderKnownUsers();
+  await saveKnownPlayers(knownPlayers);
+  renderKnownPlayers();
 }
 
 function getCricketModeSelection(){
@@ -579,14 +579,6 @@ function getCricketModeSelection(){
   }
   return { cricketCutthroat: false, cricketPoints: true };
 }
-
-function formatSnapshotLabel(snapshot){
-  const gameLabel = escapeHtml(snapshot.gameLabel || snapshot.game || 'Game');
-  const players = (snapshot.players || []).map((player) => player.name).filter(Boolean).join(', ');
-  const startedAt = snapshot.startedAt ? new Date(snapshot.startedAt).toLocaleString() : 'Unknown start';
-  return `${gameLabel} • ${startedAt}${players ? ` • ${escapeHtml(players)}` : ''}`;
-}
-
 function buildGameOptionsFromSnapshot(snapshot){
   if(!snapshot.gameOptions){
     throw new Error('Snapshot missing game options.');
@@ -594,35 +586,9 @@ function buildGameOptionsFromSnapshot(snapshot){
   return snapshot.gameOptions;
 }
 
-function renderResumeList(){
-  if(!resumeListEl){
-    return;
-  }
-
-  resumeListEl.innerHTML = '';
-
-  if(snapshotCache.length === 0){
-    resumeListEl.innerHTML = '<li class="list-group-item"><span class="text-muted">No saved games yet.</span></li>';
-    return;
-  }
-
-  const template = document.getElementById('resume-list-entry-template');
-  const sorted = [...snapshotCache].sort((left, right) => (right.startedAt || 0) - (left.startedAt || 0));
-  for(const snapshot of sorted){
-    if (!template) return;
-    const row = template.content.firstElementChild.cloneNode(true);
-    row.querySelector('.resume-label').textContent = formatSnapshotLabel(snapshot);
-    const resumeBtn = row.querySelector('.resume-btn');
-    const deleteBtn = row.querySelector('.delete-btn');
-    if (resumeBtn) resumeBtn.setAttribute('data-id', snapshot.id);
-    if (deleteBtn) deleteBtn.setAttribute('data-id', snapshot.id);
-    resumeListEl.appendChild(row);
-  }
-}
-
 async function refreshResumeList(){
   snapshotCache = await storage.listGames();
-  renderResumeList();
+  renderResumeList(snapshotCache);
 }
 
 function hydrateGameFromSnapshot(gameInstance, snapshot){
@@ -1262,9 +1228,9 @@ async function startGame(){
     return;
   }
 
-  const mergedKnownUsers = uniquePlayerNames([...knownUsers, ...players]);
-  await saveKnownUsers(mergedKnownUsers);
-  renderKnownUsers();
+  const mergedKnownPlayers = uniquePlayerNames([...knownPlayers, ...players]);
+  await saveKnownPlayers(mergedKnownPlayers);
+  renderKnownPlayers();
   // Do not clear gamePlayers here so players persist for next game
   renderAddedPlayersTable();
 
@@ -1410,59 +1376,10 @@ function renderHistoryList(){
     }
     const sorted = [...filteredHistory].sort((left, right) => right.finishedAt - left.finishedAt);
     for(const record of sorted){
-      const item = document.createElement('li');
-      item.className = 'list-group-item history-entry';
-      const row = document.createElement('div');
-      row.className = 'd-flex justify-content-between align-items-start gap-3';
-      const label = document.createElement('div');
-      const players = (record.players || []).map((player) => player.name).join(', ');
-      const shanghaiFinishRound = getShanghaiFinishRound(record);
-      const winnerLabel = record.winners?.length > 1
-        ? `Winners: ${record.winners.join(', ')}`
-        : `Winner: ${record.winner}`;
-      const winnerFlair = shanghaiFinishRound
-        ? ` <span class="shanghai-finish-badge">SHANGHAI FINISH • ${shanghaiFinishRound}</span>`
-        : '';
-      label.innerHTML = `
-        <div><strong>${escapeHtml(record.gameLabel || record.game)}</strong> • ${new Date(record.finishedAt).toLocaleString()}</div>
-        <div class="text-muted small">${escapeHtml(winnerLabel)}${winnerFlair} • Players: ${escapeHtml(players)}</div>
-      `;
-      // View button
-      const viewBtn = document.createElement('button');
-      viewBtn.className = 'btn btn-outline-secondary btn-sm flex-shrink-0';
-      viewBtn.textContent = 'View';
-      viewBtn.setAttribute('aria-expanded', 'false');
-      // Delete button
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'btn btn-outline-danger btn-sm flex-shrink-0 ms-2';
-      deleteBtn.textContent = 'Delete';
-      const inlineDetail = document.createElement('div');
-      inlineDetail.className = 'history-inline-detail';
-      inlineDetail.hidden = true;
-      viewBtn.addEventListener('click', () => {
-        const isOpen = !inlineDetail.hidden;
-        inlineDetail.hidden = isOpen;
-        viewBtn.textContent = isOpen ? 'View' : 'Hide';
-        viewBtn.setAttribute('aria-expanded', String(!isOpen));
-        if(!isOpen && !inlineDetail.dataset.rendered){
-          inlineDetail.innerHTML = renderHistoryDetailHtml(record);
-          inlineDetail.dataset.rendered = '1';
-        }
-      });
-      deleteBtn.addEventListener('click', async () => {
-        const confirmed = await showConfirm('Delete this history item? This cannot be undone.', 'Delete History');
-        if (!confirmed) return;
-        await storage.deleteHistory(record.id);
-        // Remove from cache and re-render
-        historyCache = historyCache.filter(r => r.id !== record.id);
-        renderHistoryListFilteredByGameTypeAndPlayers(gameType, playerNames);
-      });
-      const btnGroup = document.createElement('div');
-      btnGroup.className = 'd-flex gap-2';
-      btnGroup.append(viewBtn, deleteBtn);
-      row.append(label, btnGroup);
-      item.append(row, inlineDetail);
-      historyList.appendChild(item);
+      const item = createHistoryEntryItem(record, () => renderHistoryListFilteredByGameTypeAndPlayers(gameType, playerNames));
+      if(item){
+        historyList.appendChild(item);
+      }
     }
   }
 
@@ -1479,48 +1396,11 @@ function renderHistoryList(){
   historyDetail.innerHTML = '';
 
   const sorted = [...filteredHistory].sort((left, right) => right.finishedAt - left.finishedAt);
-  const template = document.getElementById('history-list-entry-template');
   for(const record of sorted){
-    if (!template) continue;
-    const item = template.content.firstElementChild.cloneNode(true);
-    // Fill in label
-    const label = item.querySelector('.history-label');
-    const players = (record.players || []).map((player) => player.name).join(', ');
-    const shanghaiFinishRound = getShanghaiFinishRound(record);
-    const winnerLabel = record.winners?.length > 1
-      ? `Winners: ${record.winners.join(', ')}`
-      : `Winner: ${record.winner}`;
-    const winnerFlair = shanghaiFinishRound
-      ? ` <span class="shanghai-finish-badge">SHANGHAI FINISH • ${shanghaiFinishRound}</span>`
-      : '';
-    label.innerHTML = `
-      <div><strong>${escapeHtml(record.gameLabel || record.game)}</strong> • ${new Date(record.finishedAt).toLocaleString()}</div>
-      <div class="text-muted small">${escapeHtml(winnerLabel)}${winnerFlair} • Players: ${escapeHtml(players)}</div>
-    `;
-    // View button
-    const viewBtn = item.querySelector('.history-view-btn');
-    const inlineDetail = item.querySelector('.history-inline-detail');
-    viewBtn.addEventListener('click', () => {
-      const isOpen = !inlineDetail.hidden;
-      inlineDetail.hidden = isOpen;
-      viewBtn.textContent = isOpen ? 'View' : 'Hide';
-      viewBtn.setAttribute('aria-expanded', String(!isOpen));
-      if(!isOpen && !inlineDetail.dataset.rendered){
-        inlineDetail.innerHTML = renderHistoryDetailHtml(record);
-        inlineDetail.dataset.rendered = '1';
-      }
-    });
-    // Delete button
-    const deleteBtn = item.querySelector('.history-delete-btn');
-    deleteBtn.addEventListener('click', async () => {
-      const confirmed = await showConfirm('Delete this history item? This cannot be undone.', 'Delete History');
-      if (!confirmed) return;
-      await storage.deleteHistory(record.id);
-      // Remove from cache and re-render
-      historyCache = historyCache.filter(r => r.id !== record.id);
-      renderHistoryList();
-    });
-    historyList.appendChild(item);
+    const item = createHistoryEntryItem(record, renderHistoryList);
+    if(item){
+      historyList.appendChild(item);
+    }
   }
   if(sorted.length === 0){
     historyList.innerHTML = '<li class="list-group-item"><span class="text-muted">No finished games yet.</span></li>';
@@ -1631,9 +1511,9 @@ if (addPlayerBtn && playerNameInput) {
     const nameKey = playerNameKey(name);
     const existsInModal = modalAddedPlayers.some(n => playerNameKey(n) === nameKey);
     const existsInGame = gamePlayers.some(n => playerNameKey(n) === nameKey);
-    const existsInKnown = knownUsers.some(n => playerNameKey(n) === nameKey);
+    const existsInKnown = knownPlayers.some(n => playerNameKey(n) === nameKey);
     if (existsInModal || existsInGame || existsInKnown) {
-      showMessage(`Player "${name}" is already added or exists as a known user.`, 'Duplicate Player', 'error');
+      showMessage(`Player "${name}" is already added or exists as a known player.`, 'Duplicate Player', 'error');
       playerNameInput.focus();
       return;
     }
@@ -1706,17 +1586,17 @@ cancelThrowBtn.addEventListener('click', () => {
 showHistoryBtn.addEventListener('click', showHistory);
 showSavedGamesBtn?.addEventListener('click', showSavedGames);
 themeSelectEl?.addEventListener('change', onThemeChange);
-pickExistingUsersBtn?.addEventListener('click', openExistingUsersModal);
-existingUsersModeAddBtn?.addEventListener('click', () => {
-  setExistingUsersModalMode('add');
+pickExistingPlayersBtn?.addEventListener('click', openExistingPlayersModal);
+existingPlayersModeAddBtn?.addEventListener('click', () => {
+  setExistingPlayersModalMode('add');
 });
-existingUsersModeManageBtn?.addEventListener('click', () => {
-  setExistingUsersModalMode('manage');
+existingPlayersModeManageBtn?.addEventListener('click', () => {
+  setExistingPlayersModalMode('manage');
 });
-closeExistingUsersBtn?.addEventListener('click', closeExistingUsersModal);
-applyExistingUsersBtn?.addEventListener('click', applyExistingUsersSelection);
-clearExistingUsersBtn?.addEventListener('click', clearExistingUsersSelection);
-clearAddedUsersBtn?.addEventListener('click', clearAddedExistingUsers);
+closeExistingPlayersBtn?.addEventListener('click', closeExistingPlayersModal);
+applyExistingPlayersBtn?.addEventListener('click', applyExistingPlayersSelection);
+clearExistingPlayersBtn?.addEventListener('click', clearExistingPlayersSelection);
+clearAddedPlayersBtn?.addEventListener('click', clearAddedExistingPlayers);
 historyViewHistoryBtn.addEventListener('click', () => {
   historyViewMode = 'history';
   renderHistoryList();
@@ -1732,15 +1612,10 @@ closeHistory.addEventListener('click', () => {
 closeSavedGamesBtn?.addEventListener('click', () => {
   savedGamesEl.hidden = true;
 });
-existingUsersModalEl?.addEventListener('click', (event) => {
-  if(event.target === existingUsersModalEl){
-    closeExistingUsersModal();
-  }
-});
 
-existingUsersPickerListEl?.addEventListener('click', async (event) => {
-  if(existingUsersModalMode === 'add'){    
-    const row = event.target.closest('.existing-user-row');
+existingPlayersPickerListEl?.addEventListener('click', async (event) => {
+  if(existingPlayersModalMode === 'add'){    
+    const row = event.target.closest('.existing-player-row');
     if(row){
 
       let value = row.textContent;
@@ -1749,14 +1624,14 @@ existingUsersPickerListEl?.addEventListener('click', async (event) => {
         checkbox.checked = !checkbox.checked;
 
         if (checkbox.checked) {
-          selectedExistingUsers.push(value);
+          selectedExistingPlayers.push(value);
         }
         else {
-          if (selectedExistingUsers.includes(value)) {  
-            selectedExistingUsers.remove(value);
+          if (selectedExistingPlayers.includes(value)) {  
+            selectedExistingPlayers.remove(value);
           }
         }
-        updateExistingUsersSelectionButtons();
+        updateExistingPlayersSelectionButtons();
       }
     }
   }
@@ -1766,21 +1641,21 @@ existingUsersPickerListEl?.addEventListener('click', async (event) => {
     return;
   }
   const action = button.getAttribute('data-action');
-  const userName = button.getAttribute('data-user-name') || '';
-  if(action === 'delete-user'){
-    await deleteExistingUser(userName);
+  const playerName = button.getAttribute('data-player-name') || '';
+  if(action === 'delete-player'){
+    await deleteExistingPlayer(playerName);
     return;
   }
-  if(action === 'rename-user'){
-    await renameExistingUser(userName);
+  if(action === 'rename-player'){
+    await renameExistingPlayer(playerName);
   }
 });
-existingUsersPickerListEl?.addEventListener('change', (event) => {
+existingPlayersPickerListEl?.addEventListener('change', (event) => {
   const input = event.target.closest('input[type="checkbox"]');
   if(!input){
     return;
   }
-  updateExistingUsersSelectionButtons();
+  updateExistingPlayersSelectionButtons();
 });
 resumeListEl?.addEventListener('click', async (event) => {
   const button = event.target.closest('button[data-action]');
@@ -1799,6 +1674,11 @@ resumeListEl?.addEventListener('click', async (event) => {
   }
 
   if(action === 'delete'){
+    // Confirm deletion
+    const confirm = await showConfirm('Are you sure you want to delete this saved game? This action cannot be undone.', 'Delete Saved Game', 'warning');
+    if(!confirm){
+      return;
+    }
     await storage.deleteGameSnapshot(snapshotId);
     await refreshResumeList();
   }
@@ -1832,8 +1712,8 @@ document.addEventListener('keydown', (event) => {
     savedGamesEl.hidden = true;
     return;
   }
-  if(event.key === 'Escape' && existingUsersModalEl && !existingUsersModalEl.hidden){
-    closeExistingUsersModal();
+  if(event.key === 'Escape' && existingPlayersModalEl && !existingPlayersModalEl.hidden){
+    closeExistingPlayersModal();
     return;
   }
   if(event.key === 'Escape'){
@@ -1850,6 +1730,6 @@ updateHUD();
 showSetupScreen();
 updateGameOptionsVisibility();
 initializeTheme();
-initializeKnownUsers();
+initializeKnownPlayers();
 refreshResumeList();
 loadBoard();
