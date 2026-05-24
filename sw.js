@@ -1,6 +1,8 @@
-const CACHE = 'darts-cache-v1.9';
+const VERSION = '2.0';
+const NAME = 'darts-cache';
+const CACHE_NAME = `${NAME}-v${VERSION}`;
 const ASSETS = [
-  '/',
+  './',
   './index.html',
   './styles.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css',
@@ -27,7 +29,7 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 
   event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
+    const cache = await caches.open(CACHE_NAME);
 
     // Precache all assets with cache-bypass for freshness
     await cache.addAll(
@@ -43,8 +45,8 @@ self.addEventListener('activate', event => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter(key => key !== CACHE)
-        .map(key => caches.delete(key))
+        .filter(key => key.startsWith(NAME) && key !== CACHE_NAME)
+        .map(key => { console.log(`Deleting cache: ${key}`); return caches.delete(key) })
     );
 
     // 2. Take control of all pages under this SW's scope
@@ -69,7 +71,12 @@ self.addEventListener('activate', event => {
 
 self.addEventListener("fetch", event => {
   event.respondWith((async () => {
+    try {
     const cached = await caches.match(event.request);
     return cached || fetch(event.request);
+    } catch (err) {
+      console.error('Fetch failed; returning offline page instead.', err);
+      return await caches.match('./index.html');
+    }
   })());
 });
