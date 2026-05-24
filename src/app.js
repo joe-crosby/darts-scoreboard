@@ -1201,6 +1201,49 @@ function getFilteredHistoryRecords(){
   });
 }
 
+function filterHistoryByGameTypeAndPlayers(gameType, playerNames){
+  const normalizedClickedNames = playerNames.map((name) => playerNameKey(name));
+  return historyCache.filter((record) => {
+    const recordGameType = record.game || record.gameKey;
+    const recordGameLabel = record.gameLabel || (GAME_REGISTRY[recordGameType]?.label) || '';
+    if (recordGameType !== gameType && recordGameLabel !== gameType) return false;
+    const recordPlayers = (record.players || [])
+      .map((p) => playerNameKey(typeof p === 'string' ? p : (p && p.name ? p.name : '')))
+      .filter(Boolean);
+    return normalizedClickedNames.some((nameKey) => recordPlayers.includes(nameKey));
+  });
+}
+
+async function deleteHistoryRecord(record, rerender){
+  if(!record || !record.id){
+    return;
+  }
+  await storage.deleteHistory(record.id);
+  historyCache = await storage.listHistory();
+  if(typeof rerender === 'function'){
+    rerender();
+  }
+}
+
+function renderHistoryListFilteredByGameTypeAndPlayers(gameType, playerNames){
+  const filteredHistory = filterHistoryByGameTypeAndPlayers(gameType, playerNames);
+  historyList.innerHTML = '';
+  historyDetail.innerHTML = '';
+  if(filteredHistory.length === 0){
+    historyList.innerHTML = '<li class="list-group-item"><span class="text-muted">No finished games yet.</span></li>';
+    return;
+  }
+
+  const rerender = () => renderHistoryListFilteredByGameTypeAndPlayers(gameType, playerNames);
+  const sorted = [...filteredHistory].sort((left, right) => right.finishedAt - left.finishedAt);
+  for(const record of sorted){
+    const item = createHistoryEntryItem(record, () => deleteHistoryRecord(record, rerender));
+    if(item){
+      historyList.appendChild(item);
+    }
+  }
+}
+
 function updateHistoryViewToggle(showingHistory){
   historyList.hidden = !showingHistory;
   historyDetail.hidden = !showingHistory;
@@ -1355,34 +1398,6 @@ function renderHistoryList(){
     });
   }
 
-  // Helper: render history filtered by game type AND players
-  function renderHistoryListFilteredByGameTypeAndPlayers(gameType, playerNames) {
-    // Normalize player names for robust comparison
-    const normalizedClickedNames = playerNames.map(n => playerNameKey(n));
-    const filteredHistory = historyCache.filter(record => {
-      const recordGameType = record.game || record.gameKey;
-      const recordGameLabel = record.gameLabel || (GAME_REGISTRY[recordGameType]?.label) || '';
-      // Match by key or label
-      if (recordGameType !== gameType && recordGameLabel !== gameType) return false;
-      // Support both string and object player entries, normalize all
-      const recordPlayers = (record.players || []).map(p => playerNameKey(typeof p === 'string' ? p : (p && p.name ? p.name : ''))).filter(Boolean);
-      return normalizedClickedNames.some(nameKey => recordPlayers.includes(nameKey));
-    });
-    historyList.innerHTML = '';
-    historyDetail.innerHTML = '';
-    if(filteredHistory.length === 0){
-      historyList.innerHTML = '<li class="list-group-item"><span class="text-muted">No finished games yet.</span></li>';
-      return;
-    }
-    const sorted = [...filteredHistory].sort((left, right) => right.finishedAt - left.finishedAt);
-    for(const record of sorted){
-      const item = createHistoryEntryItem(record, () => renderHistoryListFilteredByGameTypeAndPlayers(gameType, playerNames));
-      if(item){
-        historyList.appendChild(item);
-      }
-    }
-  }
-
   const showingHistory = historyViewMode === 'history';
   updateHistoryViewToggle(showingHistory);
 
@@ -1397,7 +1412,7 @@ function renderHistoryList(){
 
   const sorted = [...filteredHistory].sort((left, right) => right.finishedAt - left.finishedAt);
   for(const record of sorted){
-    const item = createHistoryEntryItem(record, renderHistoryList);
+    const item = createHistoryEntryItem(record, () => deleteHistoryRecord(record, renderHistoryList));
     if(item){
       historyList.appendChild(item);
     }
