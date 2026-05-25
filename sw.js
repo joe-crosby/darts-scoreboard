@@ -1,4 +1,4 @@
-const VERSION = '2.1';
+const VERSION = '2.2';
 const NAME = 'darts-cache';
 const CACHE_NAME = `${NAME}-v${VERSION}`;
 const ASSETS = [
@@ -31,7 +31,6 @@ self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // Precache all assets with cache-bypass for freshness
     await cache.addAll(
       ASSETS.map(url => new Request(url, { cache: "reload" }))
     );
@@ -41,7 +40,6 @@ self.addEventListener("install", event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
 
-    // 1. Delete old caches (your original logic)
     const keys = await caches.keys();
     await Promise.all(
       keys
@@ -49,21 +47,7 @@ self.addEventListener('activate', event => {
         .map(key => { console.log(`Deleting cache: ${key}`); return caches.delete(key) })
     );
 
-    // 2. Take control of all pages under this SW's scope
     await self.clients.claim();
-
-    // 3. Refresh ONLY your app's windows
-    const clients = await self.clients.matchAll({
-      type: "window",
-      includeUncontrolled: true
-    });
-
-    for (const client of clients) {
-      // Only refresh windows that belong to YOUR app
-      if (client.url.startsWith(self.registration.scope)) {
-        client.navigate(client.url);
-      }
-    }
 
   })());
 });
