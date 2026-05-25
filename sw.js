@@ -1,4 +1,4 @@
-const VERSION = '2.2';
+const VERSION = '2.3';
 const NAME = 'darts-cache';
 const CACHE_NAME = `${NAME}-v${VERSION}`;
 const ASSETS = [
