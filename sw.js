@@ -56,8 +56,16 @@ self.addEventListener('activate', event => {
 self.addEventListener("fetch", event => {
   event.respondWith((async () => {
     try {
-    const cached = await caches.match(event.request);
-    return cached || fetch(event.request);
+      const url = new URL(event.request.url);
+      let request = event.request;
+
+      if (url.origin === location.origin &&
+          (url.pathname === '/' || url.pathname === '/index' || url.pathname === '/index.html')) {
+        request = new Request('./index.html');
+      }
+
+      const cached = await caches.match(request);
+      return cached || fetch(event.request);
     } catch (err) {
       console.error('Fetch failed; returning offline page instead.', err);
       return await caches.match('./index.html');
